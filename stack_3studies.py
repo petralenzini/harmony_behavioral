@@ -1,8 +1,8 @@
 import os
 import pandas as pd
+import os
 
-root_dir = "/Users/yuanyuanxiaowang/PycharmProjects/pythonProject/Harmony/harmony_behavioral" \
-           "/Harmony_non_imaging_data_sharing"
+root_dir = "/Users/petralenzini/work/harmony/harmony_behavioral"
 
 ADA_dir = os.path.join(root_dir, "BANDA_Whitfield_Gabrieli")
 DAM_dir = os.path.join(root_dir, "ANXPE_Sheline")
@@ -13,18 +13,23 @@ DAM_files = os.listdir(DAM_dir)
 MDD_files = os.listdir(MDD_dir)
 
 # ADA
-merged_df = pd.DataFrame()
+merged_df = pd.DataFrame(columns=['src_subject_key','subjectkey'])
 if '.DS_Store' in ADA_files:
     ADA_files.remove('.DS_Store')
 for file in ADA_files:
     df = pd.read_csv(os.path.join(ADA_dir, file), delimiter='\t', header=0)
-    df = df.iloc[1:]
-    if merged_df.empty:
-        merged_df = df
-    else:
-        # merged_df = pd.merge(merged_df, df, on=['src_subject_id', 'interview_date', 'sex', 'interview_age'],how='outer')
-        merged_df = pd.merge(merged_df, df, how='outer')
-
+    mergelist=list(set(list(merged_df.columns)).intersection(list(df.columns)))
+    print(file)
+    print(mergelist)
+    try:
+        df = df.iloc[1:]
+        if merged_df.empty:
+            merged_df = df
+        else:
+            merged_df = pd.merge(merged_df, df, on=mergelist,how='outer')
+            #merged_df = pd.merge(merged_df, df, how='outer')
+    except:
+        pass
 if not merged_df.empty:
     merged_df['study'] = 'ADA'
 
@@ -33,8 +38,10 @@ cols = ['src_subject_id', 'interview_date', 'interview_age', 'study', 'sex'] + [
                                                                                             'interview_date', 'sex',
                                                                                             'interview_age', 'study']]
 merged_df = merged_df[cols]
+dictionary = pd.DataFrame(cols)
+dictionary.to_csv(os.path.join(root_dir,"DataDictionaryDraft.csv"), index=False)
 
-# DAM
+    # DAM
 merged_dfDAM = pd.DataFrame()
 if '.DS_Store' in DAM_files:
     DAM_files.remove('.DS_Store')
@@ -54,6 +61,8 @@ cols = ['src_subject_id', 'interview_date', 'interview_age', 'study', 'sex'] + [
                                                                                 col not in ['src_subject_id',
                                                                                             'interview_date', 'sex',
                                                                                             'interview_age', 'study']]
+
+
 merged_dfDAM = merged_dfDAM[cols]
 
 # MDD
