@@ -3,8 +3,7 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-root_dir = "/Users/yuanyuanxiaowang/PycharmProjects/pythonProject/Harmony/harmony_behavioral" \
-           "/Harmony_non_imaging_data_sharing"
+root_dir = "/Users/petralenzini/work/harmony/harmony_behavioral"
 
 
 ADA_dir = os.path.join(root_dir, "BANDA_Whitfield_Gabrieli")
@@ -18,36 +17,30 @@ MDD_files = os.listdir(MDD_dir)
 form_name = "pcps01"
 
 ADA_full_form_name = form_name + '.txt'
-form_ADA = pd.read_csv(os.path.join(ADA_dir, ADA_full_form_name), delimiter='\t', header=0)
+form_ADA = pd.read_csv(os.path.join(ADA_dir, ADA_full_form_name), delimiter='\t', header=1)
+form_ADA['study']='BANDA'
 print(form_ADA)
 
 DAM_full_form_name = form_name + '.csv'
 form_DAM = pd.read_csv(os.path.join(DAM_dir, DAM_full_form_name), header=1)
+form_DAM['study']='ANXPE'
 print(form_DAM)
 
 MDD_full_form_name = form_name + '.csv'
 form_MDD = pd.read_csv(os.path.join(MDD_dir, MDD_full_form_name), header=1)
+form_MDD['study']='MDD'
 print(form_MDD)
 
-list(form_ADA)
-list(form_DAM)
-list(form_MDD)
-set(list(form_MDD))&set(list(form_DAM))
 
-form_MDD['nih_tlbx_fctsc'].plot.bar()
-plt.show()
 
-form_DAM['nih_tlbx_fctsc'].plot.bar()
-plt.show()
+stack=pd.concat([form_MDD,form_DAM,form_ADA],axis=0)
+stack=stack.reset_index().drop(columns=['index','level_0'])
 
-mdd = form_MDD[['nih_tlbx_fctsc']].copy()
-mdd['label'] = 'MDD'
+#i='nih_tlbx_fctsc'
+for i in list(stack.columns)[6:25]:
+    try:
+        sns.histplot(stack[[i,'study']],x=i,hue='study')##,x='nih_tlbx_fctsc')#,hue='study')
+        plt.show()
+    except:
+        print("no plot for",i)
 
-dam = form_DAM[['nih_tlbx_fctsc']].copy()
-dam['label'] = 'DAM'
-
-result_df = pd.concat([mdd, dam], ignore_index=True)
-plt.figure(figsize=(10,6))
-ax = sns.boxplot(x='label', y='nih_tlbx_fctsc', data=result_df)
-ax.set_title('Boxplot of nih_tlbx_fctsc')
-plt.show()
