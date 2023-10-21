@@ -111,6 +111,11 @@ RedDict.loc[sections,'Section Header']=RedDict['Form / Instrument']
 RedDict.loc[RedDict['Variable / Field Name']=='adhddxoverride']
 
 #for variables that are reused across structures,
+RedDict['mapto']=''
+RedDict.loc[RedDict['Variable / Field Name'].isnull()==False,'mapto']=RedDict['Form / Instrument']+'_'+RedDict['Variable / Field Name']
+#save the mapping
+RedDict[['Variable / Field Name','mapto']].to_csv(os.path.join(root_dir,"VariableMap2RedCap.csv"),index=False)
+RedDict.drop(columns=['mapto'])
 RedDict.loc[RedDict['Variable / Field Name'].isnull()==False,'Variable / Field Name']=RedDict['Form / Instrument']+'_'+RedDict['Variable / Field Name']
 RedDict.loc[RedDict['Variable / Field Name'].str.contains('adhddxoverride')]
 
@@ -139,6 +144,7 @@ RedDict.loc[RedDict['Form / Instrument'].str.replace('.txt','').str.replace(".cs
 RedDict.loc[RedDict['Form / Instrument'].str.replace('.txt','').str.replace(".csv","").isin(temp2),'Form / Instrument']='Temperment'
 RedDict.loc[RedDict['Form / Instrument'].str.replace('.txt','').str.replace(".csv","").isin(dems2),'Form / Instrument']='Sample_Characteristics'
 RedDict.loc[RedDict['Form / Instrument'].str.replace('.txt','').str.replace(".csv","").isin(notlist),'Form / Instrument']='Unassigned'
+
 
 reorder=['Variable / Field Name', 'Form / Instrument', 'Section Header','Field Type', 'Field Label', 'Choices, Calculations, OR Slider Labels']
 RedDict[reorder].to_csv(os.path.join(root_dir,"REDCap_DataDictionary.csv"),index=False)
