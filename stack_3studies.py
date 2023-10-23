@@ -2,8 +2,10 @@ import os
 import pandas as pd
 import os
 
-# root_dir = "/Users/petralenzini/work/harmony/harmony_behavioral"
-root_dir = "/Users/yuanyuanxiaowang/PycharmProjects/pythonProject/Harmony/harmony_behavioral/Harmony_non_imaging_data_sharing"
+rmstructure=['fmriresults01','imagingcollection01','image03']
+
+root_dir = "/Users/petralenzini/work/harmony/harmony_behavioral"
+#root_dir = "/Users/yuanyuanxiaowang/PycharmProjects/pythonProject/Harmony/harmony_behavioral/Harmony_non_imaging_data_sharing"
 
 ADA_dir = os.path.join(root_dir, "BANDA_Whitfield_Gabrieli")
 DAM_dir = os.path.join(root_dir, "ANXPE_Sheline")
@@ -13,31 +15,45 @@ ADA_files = os.listdir(ADA_dir)  # txt
 DAM_files = os.listdir(DAM_dir)
 MDD_files = os.listdir(MDD_dir)
 
+#corelist=['subjectkey','src_subject_id','interview_date','interview_age','sex','gender']
+#droplist=['collection_id']
+
 # ADA
-merged_df = pd.DataFrame(columns=['src_subject_key', 'subjectkey'])
+mergelist=['src_subject_id', 'subjectkey','interview_date','interview_age','sex','collection_id','collection_title']
+droplist=['collection_id','collection_title']
+merged_df = pd.DataFrame(columns=mergelist)
 ADA_files = [file for file in ADA_files if 'pdf' not in file
              and ('dataset_collection' not in file)
              and ('package_info' not in file)
-             and ('md5_values' not in file)]
+             and ('md5_values' not in file)
+             and ('fmriresults01' not in file)
+             and ('imagingcollection01' not in file)]
 if '.DS_Store' in ADA_files:
     ADA_files.remove('.DS_Store')
 for file in ADA_files:
+    prefix=os.path.splitext(file)[0]
     df = pd.read_csv(os.path.join(ADA_dir, file), delimiter='\t', header=0)
+    print(prefix,":",df.shape)
     # print(file)
     # print(mergelist)
     try:
         df = df.iloc[1:]
-        mergelist = list(set(list(merged_df.columns)).intersection(list(df.columns)))
+        #mergelist = list(set(list(merged_df.columns)).intersection(list(df.columns)))
+        before=[i for i in list(df.columns) if i not in mergelist]
+        after=[prefix+i for i in before]
+        d=dict(zip(before,after))
+        df=df.rename(columns=d)
+        df=df.dropna(axis=1, how='all').copy()
         if merged_df.empty:
             merged_df = df
         else:
             merged_df = pd.merge(merged_df, df, on=mergelist, how='outer')
+            print("Merged:", merged_df.shape)
             # merged_df = pd.merge(merged_df, df, how='outer')
     except:
         pass
 if not merged_df.empty:
     merged_df['study'] = 'ADA'
-
 cols = ['src_subject_id', 'interview_date', 'interview_age', 'study', 'sex'] + [col for col in merged_df if
                                                                                 col not in ['src_subject_id',
                                                                                             'interview_date', 'sex',
