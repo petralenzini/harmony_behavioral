@@ -18,9 +18,9 @@ MDD_files = os.listdir(MDD_dir)
 # droplist=['collection_id']
 
 # ADA
-mergelist = ['src_subject_id', 'subjectkey', 'interview_date', 'interview_age', 'sex', 'collection_id',
-             'collection_title']
-# mergelist = ['src_subject_id', 'subjectkey', 'interview_date', 'interview_age', 'sex']
+# mergelist = ['src_subject_id', 'subjectkey', 'interview_date', 'interview_age', 'sex', 'collection_id',
+#             'collection_title']
+mergelist = ['src_subject_id', 'subjectkey', 'interview_date', 'interview_age', 'sex']
 droplist = ['collection_id', 'collection_title']
 ADA_files = [file for file in ADA_files if 'pdf' not in file
              and ('dataset_collection' not in file)
@@ -181,7 +181,9 @@ for file in MDD_files:
         df = df.dropna(axis=1, how='all').copy()
         df = df.drop_duplicates(subset=None, keep='first', inplace=False, ignore_index=False).copy()
         duplicate_rows_df = df[df[mergelist].duplicated(keep=False)]
-        print(duplicate_rows_df)
+        set1 = set(df['subjectkey'])
+        set2 = set(merged_dfMDD['subjectkey'])
+        print('number of different subjectkey :', len(set1 ^ set2))
         print('duplicate', prefix, ":", duplicate_rows_df.shape)
         print(prefix, ":", df.shape)
         if merged_dfMDD.empty:
