@@ -59,6 +59,7 @@ for file in ADA_files:
         df = df.dropna(axis=1, how='all').copy()
         # df = df.drop_duplicates(subset=None, keep='first', inplace=False, ignore_index=False).copy()
         print(prefix, ":", df.shape)
+        # print(df['interview_date'])
         if merged_df.empty:
             merged_df = df
         else:
@@ -118,7 +119,7 @@ cols = ['src_subject_id', 'interview_date', 'interview_age', 'study', 'sex'] + [
 merged_dfDAM = merged_dfDAM[cols]
 
 # MDD
-mergelist = ['src_subject_id', 'subjectkey', 'interview_date', 'interview_age', 'sex']
+mergelist = ['src_subject_id', 'subjectkey', 'interview_date', 'interview_age'] #need to fix sex
 droplist = ['collection_id', 'collection_title']
 MDD_files = [file for file in MDD_files if "definitions" not in file
              and ('xlsx' not in file)
@@ -144,9 +145,10 @@ for file in MDD_files:
         df = df.rename(columns=d)
         df = df.dropna(axis=1, how='all').copy()
         duplicate_rows_df = df[df[mergelist].duplicated(keep=False)]
-        print(duplicate_rows_df)
-        print('duplicate', prefix, ":", duplicate_rows_df.shape)
         print(prefix, ":", df.shape)
+        #print(duplicate_rows_df)
+        print('duplicate', prefix, ":", duplicate_rows_df.shape)
+        print(df['interview_date'])
         if merged_dfMDD.empty:
             merged_dfMDD = df
         else:
@@ -162,9 +164,10 @@ for file in MDD_files:
         df = df.dropna(axis=1, how='all').copy()
         df = df.drop_duplicates(subset=None, keep='first', inplace=False, ignore_index=False).copy()
         duplicate_rows_df = df[df[mergelist].duplicated(keep=False)]
-        print(duplicate_rows_df)
-        print('duplicate', prefix, ":", duplicate_rows_df.shape)
         print(prefix, ":", df.shape)
+        #print(duplicate_rows_df)
+        print('duplicate', prefix, ":", duplicate_rows_df.shape)
+        print(df['interview_date'])
         if merged_dfMDD.empty:
             merged_dfMDD = df
         else:
@@ -172,6 +175,7 @@ for file in MDD_files:
             print("Merged:", merged_dfMDD.shape)
     else:
         df = pd.read_csv(os.path.join(MDD_dir, file), header=1, dtype=str)
+        df['interview_date'] = pd.to_datetime(df['interview_date'], format='%m/%d/%y').dt.strftime('%m/%d/%Y')
         df['sex'] = df['gender']
         df = df.drop(columns='gender')
         before = [i for i in list(df.columns) if i not in mergelist]
@@ -183,9 +187,10 @@ for file in MDD_files:
         duplicate_rows_df = df[df[mergelist].duplicated(keep=False)]
         set1 = set(df['subjectkey'])
         set2 = set(merged_dfMDD['subjectkey'])
+        print(prefix, ":", df.shape)
         print('number of different subjectkey :', len(set1 ^ set2))
         print('duplicate', prefix, ":", duplicate_rows_df.shape)
-        print(prefix, ":", df.shape)
+        # print(df['interview_date'])
         if merged_dfMDD.empty:
             merged_dfMDD = df
         else:
