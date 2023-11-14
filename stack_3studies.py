@@ -118,6 +118,7 @@ cols = ['src_subject_id', 'interview_date', 'interview_age', 'study', 'sex'] + [
 
 merged_dfDAM = merged_dfDAM[cols]
 
+
 # MDD
 
 # For the wierd case of data/age mismatches above, once you can confirm that it's not something we introduced (e.g.
@@ -131,6 +132,7 @@ def convert_date(date_str):
         return pd.to_datetime(date_str, format='%m/%d/%y').strftime('%m/%d/%Y')
     else:
         return pd.to_datetime(date_str, format='%m/%d/%Y').strftime('%m/%d/%Y')
+
 
 AgeCorrect = pd.DataFrame()
 for file in MDD_files:
@@ -150,7 +152,6 @@ for file in MDD_files:
 
 AgeCorrect = AgeCorrect.sort_values(by=['interview_date', 'interview_age'], ascending=[True, True])
 AgeCorrect = AgeCorrect.drop_duplicates(subset=['subjectkey', 'interview_date'], keep='first')
-
 
 # 2. Sort by date and age, such that the youngest age is always the first one that shows up for a date.
 # 3. Drop duplicates by date (e.g. effectively keeping only the youngest age)
@@ -180,7 +181,7 @@ for file in MDD_files:
     elif 'hrsd01.csv' in file:
         # formatting issue, dlm is ; not ,
         df = pd.read_csv(os.path.join(MDD_dir, file), sep=';', header=1, dtype=str)
-        df = df.drop(columns='interview_age')
+        # df = df.drop(columns='interview_age')
         df['interview_date'] = pd.to_datetime(df['interview_date'], format='%m/%d/%Y').dt.strftime('%m/%d/%Y')
         df['sex'] = df['gender']
         df = df.drop(columns='gender')
@@ -205,7 +206,7 @@ for file in MDD_files:
     elif 'ndar_subject01' in file:
         ###do not need to rename the sex column
         df = pd.read_csv(os.path.join(MDD_dir, file), header=1, dtype=str)
-        df = df.drop(columns='interview_age')
+        # df = df.drop(columns='interview_age')
         df['interview_date'] = pd.to_datetime(df['interview_date'], format='%m/%d/%Y').dt.strftime('%m/%d/%Y')
         df['sex'] = df['sex'].replace({'Male': 'M', 'Female': 'F'})
         df = df.drop(columns=['phenotype'])
@@ -233,7 +234,7 @@ for file in MDD_files:
     elif any(substring in file for substring in nih_pin_remove_list):
         ###need to remove 'nih_pin'
         df = pd.read_csv(os.path.join(MDD_dir, file), header=1, dtype=str)
-        df = df.drop(columns='interview_age')
+        # df = df.drop(columns='interview_age')
         df['interview_date'] = pd.to_datetime(df['interview_date'], format='%m/%d/%y').dt.strftime('%m/%d/%Y')
         df = df.drop(columns=['nih_pin']).copy()
         df['sex'] = df['gender']
@@ -260,7 +261,7 @@ for file in MDD_files:
             print("Merged:", merged_dfMDD.shape)
     else:
         df = pd.read_csv(os.path.join(MDD_dir, file), header=1, dtype=str)
-        df = df.drop(columns='interview_age')
+        # df = df.drop(columns='interview_age')
         df['interview_date'] = pd.to_datetime(df['interview_date'], format='%m/%d/%y').dt.strftime('%m/%d/%Y')
         df['sex'] = df['gender']
         df = df.drop(columns='gender')
@@ -291,15 +292,15 @@ if not merged_dfMDD.empty:
 
 # merged_dfMDD['sex'] = merged_dfMDD['gender']
 # merged_dfMDD = merged_dfMDD.drop(columns='gender')
-cols = ['src_subject_id', 'interview_date', 'study', 'sex'] + [col for col in merged_dfMDD if
+cols = ['src_subject_id', 'interview_date', 'interview_age', 'study', 'sex'] + [col for col in merged_dfMDD if
                                                                col not in ['src_subject_id',
                                                                            'interview_date', 'sex',
                                                                            'interview_age', 'study']]
 merged_dfMDD = merged_dfMDD[cols]
 
-merged_dfMDD_final = pd.merge(merged_dfMDD, AgeCorrect[['subjectkey', 'interview_date']], on=['subjectkey', 'interview_date'], how='inner')
+merged_dfMDD_final = pd.merge(merged_dfMDD, AgeCorrect,on=['subjectkey', 'interview_date'], how='inner')
 
-
+merged_dfMDD_final = merged_dfMDD_final[cols]
 
 # stack three study merged_temp = pd.merge(merged_dfMDD, merged_dfDAM, on=['src_subject_id', 'interview_date',
 # 'interview_age', 'study', 'sex'], how='outer') merged_all = pd.merge(merged_temp, merged_df, on=['src_subject_id',
