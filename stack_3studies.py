@@ -223,9 +223,10 @@ merged_dfMDD = merged_dfMDD[cols]
 # merged_all = pd.merge(merged_temp, merged_df, on=['src_subject_id', 'interview_date', 'interview_age', 'study', 'sex'], how='outer')
 merged_all = pd.concat([merged_dfMDD, merged_dfDAM, merged_df], axis=0)
 
-merged_all.to_csv('NDA_structures_combined.csv')
+merged_all.to_csv(os.path.join(root_dir, 'NDA_structures_table_combined.csv'))
 
 #######################################################
-#col_all = list(set(list(merged_df.columns)).union(list(merged_dfDAM.columns), list(merged_dfMDD.columns)))
-#dictionary = pd.DataFrame(col_all)
-#dictionary.to_csv(os.path.join(root_dir, "DataDictionaryDraft.csv"), index=False, header=False)
+#change name of output to prevent confusion over REDCap data dictionary
+col_all = list(set(list(merged_df.columns)).union(list(merged_dfDAM.columns), list(merged_dfMDD.columns)))
+varsall = pd.DataFrame(col_all)
+varsall.to_csv(os.path.join(root_dir, "NDA_structures_variables_combined.csv"), index=False, header=False)
