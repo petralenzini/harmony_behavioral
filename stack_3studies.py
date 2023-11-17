@@ -3,8 +3,8 @@ import pandas as pd
 
 rmstructure = ['fmriresults01', 'imagingcollection01', 'image03']
 
-# root_dir = "/Users/petralenzini/work/harmony/harmony_behavioral"
-root_dir = "/Users/yuanyuanxiaowang/PycharmProjects/pythonProject/Harmony/harmony_behavioral/Harmony_non_imaging_data_sharing"
+root_dir = "/Users/petralenzini/work/harmony/harmony_behavioral"
+#root_dir = "/Users/yuanyuanxiaowang/PycharmProjects/pythonProject/Harmony/harmony_behavioral/Harmony_non_imaging_data_sharing"
 
 ADA_dir = os.path.join(root_dir, "BANDA_Whitfield_Gabrieli")
 DAM_dir = os.path.join(root_dir, "ANXPE_Sheline")
@@ -59,7 +59,6 @@ for file in ADA_files:
         df = df.dropna(axis=1, how='all').copy()
         # df = df.drop_duplicates(subset=None, keep='first', inplace=False, ignore_index=False).copy()
         print(prefix, ":", df.shape)
-        # print(df['interview_date'])
         if merged_df.empty:
             merged_df = df
         else:
@@ -118,61 +117,17 @@ cols = ['src_subject_id', 'interview_date', 'interview_age', 'study', 'sex'] + [
 
 merged_dfDAM = merged_dfDAM[cols]
 
-
 # MDD
-
-# For the wierd case of data/age mismatches above, once you can confirm that it's not something we introduced (e.g.
-# by checking the files they uploaded), lets do the following
-# 1. create a separate df, which is just the merge of subjectkey, interview_date, and age.
-def convert_date(date_str):
-    # Split the date string by '/'
-    parts = date_str.split('/')
-    # Check if the year part (last part) has 2 digits
-    if len(parts[-1]) == 2:
-        return pd.to_datetime(date_str, format='%m/%d/%y').strftime('%m/%d/%Y')
-    else:
-        return pd.to_datetime(date_str, format='%m/%d/%Y').strftime('%m/%d/%Y')
-
-
-AgeCorrect = pd.DataFrame()
-for file in MDD_files:
-    if 'definitions' in file:
-        pass
-    elif 'hrsd01.csv' in file:
-        # formatting issue, dlm is ; not ,
-        df = pd.read_csv(os.path.join(MDD_dir, file), sep=';', header=1, dtype=str)
-        df['interview_date'] = df['interview_date'].apply(convert_date)
-        age_df = df[['subjectkey', 'interview_date', 'interview_age']]
-        AgeCorrect = pd.concat([AgeCorrect, age_df], axis=0)
-    else:
-        df = pd.read_csv(os.path.join(MDD_dir, file), header=1, dtype=str)
-        df['interview_date'] = df['interview_date'].apply(convert_date)
-        age_df = df[['subjectkey', 'interview_date', 'interview_age']]
-        AgeCorrect = pd.concat([AgeCorrect, age_df], axis=0)
-
-AgeCorrect = AgeCorrect.sort_values(by=['interview_date', 'interview_age'], ascending=[True, True])
-AgeCorrect = AgeCorrect.drop_duplicates(subset=['subjectkey', 'interview_date'], keep='first')
-
-# 2. Sort by date and age, such that the youngest age is always the first one that shows up for a date.
-# 3. Drop duplicates by date (e.g. effectively keeping only the youngest age)
-# 4. Set this df aside (lets call it AgeCorrect for simplicity) and go back to your regular merging, only this time drop
-# age before any merges, and remove age from the mergelist.
-# 5. When you get your final large merged file, go back and merge in AgeCorrect by subjectkey and date.  In this way,
-# you should only get one row per date, unless rows are duplicated for some other reason.
-
-mergelist = ['src_subject_id', 'subjectkey', 'interview_date', 'sex']  # need to fix sex
+mergelist = ['src_subject_id', 'subjectkey', 'interview_date', 'interview_age', 'sex']
 droplist = ['collection_id', 'collection_title']
 MDD_files = [file for file in MDD_files if "definitions" not in file
              and ('xlsx' not in file)
              and ('docx' not in file)
              and ('REDCap_ANXPEConnectomicsStudyDataCol_DataDictionary_2023-08-22' not in file)
              and ('u01_neuropsych_summary_v1.csv' not in file)]
+merged_dfMDD = pd.DataFrame(columns=['src_subject_key', 'subjectkey'])
 if '.DS_Store' in MDD_files:
     MDD_files.remove('.DS_Store')
-
-merged_dfMDD = pd.DataFrame(columns=['src_subject_key', 'subjectkey'])
-nih_pin_remove_list = ['flanker01.csv', 'orrt01.csv', 'lswmt01.csv', 'dccs01.csv', 'pcps01.csv', 'psm01.csv',
-                       'tpvt01.csv']
 
 for file in MDD_files:
     prefix = os.path.splitext(file)[0]
@@ -181,23 +136,22 @@ for file in MDD_files:
     elif 'hrsd01.csv' in file:
         # formatting issue, dlm is ; not ,
         df = pd.read_csv(os.path.join(MDD_dir, file), sep=';', header=1, dtype=str)
-        # df = df.drop(columns='interview_age')
-        df['interview_date'] = pd.to_datetime(df['interview_date'], format='%m/%d/%Y').dt.strftime('%m/%d/%Y')
         df['sex'] = df['gender']
         df = df.drop(columns='gender')
-        columns_to_check = df.columns.difference(mergelist)
-        df = df.dropna(subset=columns_to_check, axis=0, how='all').copy()
         before = [i for i in list(df.columns) if i not in mergelist]
         after = [prefix + '_' + i for i in before]
         d = dict(zip(before, after))
         df = df.rename(columns=d)
+        # fix the cases where interview dates are same but ages change.
+        dupfix = df[['src_subject_id', 'subjectkey', 'interview_date', 'interview_age', 'sex']].sort_values(
+            ['subjectkey', 'interview_date']).drop_duplicates(subset=['subjectkey', 'interview_date'], keep='first')
+        df = pd.merge(df.drop(columns='interview_age'), dupfix,
+                      on=['src_subject_id', 'subjectkey', 'interview_date', 'sex'], how='outer')
+        df = df.dropna(axis=1, how='all').copy()
         duplicate_rows_df = df[df[mergelist].duplicated(keep=False)]
-        set1 = set(df['subjectkey'])
-        set2 = set(merged_dfMDD['subjectkey'])
-        print(prefix, ":", df.shape)
-        # print(duplicate_rows_df)
-        print('number of different subjectkey :', len(set1 ^ set2))
+        print(duplicate_rows_df['subjectkey'])
         print('duplicate', prefix, ":", duplicate_rows_df.shape)
+        print(prefix, ":", df.shape)
         if merged_dfMDD.empty:
             merged_dfMDD = df
         else:
@@ -206,54 +160,16 @@ for file in MDD_files:
     elif 'ndar_subject01' in file:
         ###do not need to rename the sex column
         df = pd.read_csv(os.path.join(MDD_dir, file), header=1, dtype=str)
-        # df = df.drop(columns='interview_age')
-        df['interview_date'] = pd.to_datetime(df['interview_date'], format='%m/%d/%Y').dt.strftime('%m/%d/%Y')
-        df['sex'] = df['sex'].replace({'Male': 'M', 'Female': 'F'})
-        df = df.drop(columns=['phenotype'])
-        columns_to_check = df.columns.difference(mergelist)
-        df = df.dropna(subset=columns_to_check, axis=0, how='all').copy()
         before = [i for i in list(df.columns) if i not in mergelist]
         after = [prefix + '_' + i for i in before]
         d = dict(zip(before, after))
         df = df.rename(columns=d)
         df = df.dropna(axis=1, how='all').copy()
-        df = df.drop_duplicates(subset=None, keep='first', inplace=False, ignore_index=False).copy()
+        df = df.drop_duplicates(subset=None, keep='first', inplace=False, ignore_index=True).copy()
         duplicate_rows_df = df[df[mergelist].duplicated(keep=False)]
-        set1 = set(df['subjectkey'])
-        set2 = set(merged_dfMDD['subjectkey'])
-        # print(duplicate_rows_df)
-        print(prefix, ":", df.shape)
-        # print(duplicate_rows_df)
-        print('number of different subjectkey :', len(set1 ^ set2))
+        print(duplicate_rows_df['subjectkey'])
         print('duplicate', prefix, ":", duplicate_rows_df.shape)
-        if merged_dfMDD.empty:
-            merged_dfMDD = df
-        else:
-            merged_dfMDD = pd.merge(merged_dfMDD, df, on=mergelist, how='outer')
-            print("Merged:", merged_dfMDD.shape)
-    elif any(substring in file for substring in nih_pin_remove_list):
-        ###need to remove 'nih_pin'
-        df = pd.read_csv(os.path.join(MDD_dir, file), header=1, dtype=str)
-        # df = df.drop(columns='interview_age')
-        df['interview_date'] = pd.to_datetime(df['interview_date'], format='%m/%d/%y').dt.strftime('%m/%d/%Y')
-        df = df.drop(columns=['nih_pin']).copy()
-        df['sex'] = df['gender']
-        df = df.drop(columns='gender')
-        columns_to_check = df.columns.difference(mergelist)
-        df = df.dropna(subset=columns_to_check, axis=0, how='all').copy()
-        before = [i for i in list(df.columns) if i not in mergelist]
-        after = [prefix + '_' + i for i in before]
-        d = dict(zip(before, after))
-        df = df.rename(columns=d)
-        df = df.dropna(axis=1, how='all').copy()
-        df = df.drop_duplicates(subset=None, keep='first', inplace=False, ignore_index=False).copy()
-        duplicate_rows_df = df[df[mergelist].duplicated(keep=False)]
-        set1 = set(df['subjectkey'])
-        set2 = set(merged_dfMDD['subjectkey'])
         print(prefix, ":", df.shape)
-        # print(duplicate_rows_df)
-        print('number of different subjectkey :', len(set1 ^ set2))
-        print('duplicate', prefix, ":", duplicate_rows_df.shape)
         if merged_dfMDD.empty:
             merged_dfMDD = df
         else:
@@ -261,31 +177,34 @@ for file in MDD_files:
             print("Merged:", merged_dfMDD.shape)
     else:
         df = pd.read_csv(os.path.join(MDD_dir, file), header=1, dtype=str)
-        # df = df.drop(columns='interview_age')
-        df['interview_date'] = pd.to_datetime(df['interview_date'], format='%m/%d/%y').dt.strftime('%m/%d/%Y')
         df['sex'] = df['gender']
         df = df.drop(columns='gender')
-        columns_to_check = df.columns.difference(mergelist)
-        df = df.dropna(subset=columns_to_check, axis=0, how='all').copy()
         before = [i for i in list(df.columns) if i not in mergelist]
         after = [prefix + '_' + i for i in before]
         d = dict(zip(before, after))
         df = df.rename(columns=d)
+        #fix the cases where interview dates are same but ages change.
+        dupfix = df[['src_subject_id','subjectkey', 'interview_date', 'interview_age','sex']].sort_values(
+            ['subjectkey', 'interview_date']).drop_duplicates(subset=['subjectkey', 'interview_date'], keep='first')
+        df = pd.merge(df.drop(columns='interview_age'),dupfix,on=['src_subject_id', 'subjectkey', 'interview_date', 'sex'],how='outer')
         df = df.dropna(axis=1, how='all').copy()
-        df = df.drop_duplicates(subset=None, keep='first', inplace=False, ignore_index=False).copy()
         duplicate_rows_df = df[df[mergelist].duplicated(keep=False)]
+        print(duplicate_rows_df[['subjectkey','interview_age','interview_date']])
+        extra=[]
+        if 'version' in df.columns:
+            extra=['version']
+        #also change to ingnore_index=True which is default.
+        df = df.drop_duplicates(subset=mergelist+extra, keep='last', inplace=False, ignore_index=True).copy()
         set1 = set(df['subjectkey'])
         set2 = set(merged_dfMDD['subjectkey'])
-        print(prefix, ":", df.shape)
         print('number of different subjectkey :', len(set1 ^ set2))
-        print('duplicate', prefix, ":", duplicate_rows_df.shape)
-        print(df.shape, merged_dfMDD.shape)
+        print('duplicate', prefix, ":", duplicate_rows_df.shape,duplicate_rows_df)
+        print(prefix, ":", df.shape)
         if merged_dfMDD.empty:
             merged_dfMDD = df
         else:
             merged_dfMDD = pd.merge(merged_dfMDD, df, on=mergelist, how='outer')
             print("Merged:", merged_dfMDD.shape)
-        print(df.shape, merged_dfMDD.shape)
 
 if not merged_dfMDD.empty:
     merged_dfMDD['study'] = 'MDD'
@@ -293,18 +212,15 @@ if not merged_dfMDD.empty:
 # merged_dfMDD['sex'] = merged_dfMDD['gender']
 # merged_dfMDD = merged_dfMDD.drop(columns='gender')
 cols = ['src_subject_id', 'interview_date', 'interview_age', 'study', 'sex'] + [col for col in merged_dfMDD if
-                                                               col not in ['src_subject_id',
-                                                                           'interview_date', 'sex',
-                                                                           'interview_age', 'study']]
+                                                                                col not in ['src_subject_id',
+                                                                                            'interview_date', 'sex',
+                                                                                            'interview_age', 'study']]
 merged_dfMDD = merged_dfMDD[cols]
 
-merged_dfMDD_final = pd.merge(merged_dfMDD, AgeCorrect,on=['subjectkey', 'interview_date'], how='inner')
-
-merged_dfMDD_final = merged_dfMDD_final[cols]
-
-# stack three study merged_temp = pd.merge(merged_dfMDD, merged_dfDAM, on=['src_subject_id', 'interview_date',
-# 'interview_age', 'study', 'sex'], how='outer') merged_all = pd.merge(merged_temp, merged_df, on=['src_subject_id',
-# 'interview_date', 'interview_age', 'study', 'sex'], how='outer')
+# stack three study
+# merged_temp = pd.merge(merged_dfMDD, merged_dfDAM,
+#                       on=['src_subject_id', 'interview_date', 'interview_age', 'study', 'sex'], how='outer')
+# merged_all = pd.merge(merged_temp, merged_df, on=['src_subject_id', 'interview_date', 'interview_age', 'study', 'sex'], how='outer')
 merged_all = pd.concat([merged_dfMDD, merged_dfDAM, merged_df], axis=0)
 
 merged_all.to_csv('NDA_structures_combined.csv')
