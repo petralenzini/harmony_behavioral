@@ -226,6 +226,6 @@ merged_all = pd.concat([merged_dfMDD, merged_dfDAM, merged_df], axis=0)
 merged_all.to_csv('NDA_structures_combined.csv')
 
 #######################################################
-col_all = list(set(list(merged_df.columns)).union(list(merged_dfDAM.columns), list(merged_dfMDD.columns)))
-dictionary = pd.DataFrame(col_all)
-dictionary.to_csv(os.path.join(root_dir, "DataDictionaryDraft.csv"), index=False, header=False)
+#col_all = list(set(list(merged_df.columns)).union(list(merged_dfDAM.columns), list(merged_dfMDD.columns)))
+#dictionary = pd.DataFrame(col_all)
+#dictionary.to_csv(os.path.join(root_dir, "DataDictionaryDraft.csv"), index=False, header=False)
