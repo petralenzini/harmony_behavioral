@@ -260,15 +260,19 @@ for file in followup_files:
     else:
         df = pd.read_csv(os.path.join(followup_dir, file), header=0)
         df = rename_columns(df)
+        mergelist_follwup = df.columns.intersection(merged_dfDES.columns)
         df['interview_date'] = pd.to_datetime(df['interview_date'], format='%m/%d/%y').dt.strftime('%m/%d/%Y')
         df = df.dropna(axis=1, how='all').copy()
         print(file, ":", df.shape)
         if merged_dfDES.empty:
             merged_dfDES = df
         else:
-            # merged_dfDES = pd.merge(merged_dfDES, df, on=mergelist, how='outer')
-            merged_dfDES = pd.concat([merged_dfDES, df], ignore_index=True)
+            merged_dfDES = pd.merge(merged_dfDES, df, on=mergelist_follwup, how='outer')
+            #merged_dfDES = pd.concat([merged_dfDES, df], ignore_index=True)
             print("Merged:", merged_dfDES.shape)
+
+if not merged_dfDES.empty:
+    merged_dfDES['study'] = 'STACT'
 
 # stack three study
 # merged_temp = pd.merge(merged_dfMDD, merged_dfDAM,
