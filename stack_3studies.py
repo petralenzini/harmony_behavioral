@@ -215,14 +215,6 @@ for file in baseline_files:
             merged_dfDES = pd.merge(merged_dfDES, df, on=mergelist, how='outer')
             print("Merged:", merged_dfDES.shape)
 
-if not merged_dfDES.empty:
-    merged_dfDES['study'] = 'STACT'
-
-cols = ['src_subject_id', 'interview_date', 'interview_age', 'study', 'sex'] + [col for col in merged_dfDES if
-                                                                                col not in ['src_subject_id',
-                                                                                            'interview_date', 'sex',
-                                                                                            'interview_age', 'study']]
-merged_dfDES = merged_dfDES[cols]
 
 
 def rename_columns(df):
@@ -267,12 +259,18 @@ for file in followup_files:
         if merged_dfDES.empty:
             merged_dfDES = df
         else:
-            merged_dfDES = pd.merge(merged_dfDES, df, on=mergelist_follwup, how='outer')
-            #merged_dfDES = pd.concat([merged_dfDES, df], ignore_index=True)
+            # merged_dfDES = pd.merge(merged_dfDES, df, on=mergelist_follwup, how='outer')
+            merged_dfDES = pd.concat([merged_dfDES, df], ignore_index=True, join='outer')
             print("Merged:", merged_dfDES.shape)
 
 if not merged_dfDES.empty:
     merged_dfDES['study'] = 'STACT'
+
+cols = ['src_subject_id', 'interview_date', 'interview_age', 'study', 'sex'] + [col for col in merged_dfDES if
+                                                                                col not in ['src_subject_id',
+                                                                                            'interview_date', 'sex',
+                                                                                            'interview_age', 'study']]
+merged_dfDES = merged_dfDES[cols]
 
 # stack three study
 # merged_temp = pd.merge(merged_dfMDD, merged_dfDAM,
