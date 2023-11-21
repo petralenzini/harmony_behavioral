@@ -44,7 +44,7 @@ for file in ADA_files:
     df = drop999cols(df, verbose=True)
     #some have the structure id housekeeping variable:
     try:
-        df = df.drop(columns=[prefix +'_id']).copy()
+        df = df.drop(columns=[prefix + '_id']).copy()
     except:
         print(prefix + "_id NOT FOUND")
     df = df.iloc[1:]
@@ -108,7 +108,7 @@ merged_dfMDD = pd.DataFrame(columns=['src_subject_key', 'subjectkey'])
 
 for file in MDD_files:
     prefix = os.path.splitext(file)[0]
-    print("processing ",prefix)
+    print("processing ", prefix)
     if 'hrsd01.csv' in file:
         # formatting issue, dlm is ; not ,
         df = pd.read_csv(os.path.join(MDD_dir, file), sep=';', header=1, dtype=str)
@@ -164,6 +164,112 @@ if not merged_dfSTACT.empty:
 #for file in followup_files:
 cols = mergelist +['study'] + [col for col in merged_dfSTACT if col not in mergelist + ['study']]
 merged_dfSTACT = merged_dfSTACT[cols].reset_index()
+# STACT(DES)
+stact_root = os.path.join(root_dir, 'STACT_Williams')
+
+baseline_dir = os.path.join(stact_root, "baseline")
+followup_dir = os.path.join(stact_root, "followups (3,6,9,12 months)")
+
+baseline_files = os.listdir(baseline_dir)
+followup_files = os.listdir(followup_dir)
+
+mergelist = ['src_subject_id', 'subjectkey', 'interview_date', 'interview_age', 'sex']
+merged_dfDES = pd.DataFrame(columns=mergelist)
+if '.DS_Store' in baseline_files:
+    baseline_files.remove('.DS_Store')
+for file in baseline_files:
+    prefix = os.path.splitext(file)[0]
+    if 'ndar01.csv' in file:
+        df = pd.read_csv(os.path.join(baseline_dir, file), header=0, encoding='ISO-8859-1')
+        df['interview_date'] = pd.to_datetime(df['interview_date'], format='%m/%d/%y').dt.strftime('%m/%d/%Y')
+        before = [i for i in list(df.columns) if i not in mergelist]
+        after = [prefix + '_' + i for i in before]
+        d = dict(zip(before, after))
+        df = df.rename(columns=d)
+        df = df.dropna(axis=1, how='all').copy()
+        print(prefix, ":", df.shape)
+        if merged_dfDES.empty:
+            merged_dfDES = df
+        else:
+            merged_dfDES = pd.merge(merged_dfDES, df, on=mergelist, how='outer')
+            print("Merged:", merged_dfDES.shape)
+    else:
+        df = pd.read_csv(os.path.join(baseline_dir, file), header=0)
+        df['interview_date'] = pd.to_datetime(df['interview_date'], format='%m/%d/%y').dt.strftime('%m/%d/%Y')
+        before = [i for i in list(df.columns) if i not in mergelist]
+        after = [prefix + '_' + i for i in before]
+        d = dict(zip(before, after))
+        df = df.rename(columns=d)
+        df = df.dropna(axis=1, how='all').copy()
+        print(prefix, ":", df.shape)
+        if merged_dfDES.empty:
+            merged_dfDES = df
+        else:
+            merged_dfDES = pd.merge(merged_dfDES, df, on=mergelist, how='outer')
+            print("Merged:", merged_dfDES.shape)
+
+
+
+def rename_columns(df):
+    new_columns = []
+    for col in df.columns:
+        if 'gad' in col:
+            new_columns.append(f'gad701_{col}')
+        elif 'phq' in col:
+            new_columns.append(f'phq01_{col}')
+        elif 'swls' in col:
+            new_columns.append(f'swls01_{col}')
+        else:
+            new_columns.append(col)
+    df.columns = new_columns
+    return df
+
+
+mergelist = ['src_subject_id', 'subjectkey', 'interview_date', 'sex']
+for file in followup_files:
+    prefix = os.path.splitext(file)[0]
+    if 'webneuro01_F' in file:
+        df = pd.read_csv(os.path.join(followup_dir, file), header=0)
+        df['interview_date'] = pd.to_datetime(df['interview_date'], format='%m/%d/%y').dt.strftime('%m/%d/%Y')
+        before = [i for i in list(df.columns) if i not in mergelist]
+        after = [prefix + '_' + i for i in before]
+        d = dict(zip(before, after))
+        df = df.rename(columns=d)
+        df = df.dropna(axis=1, how='all').copy()
+        print(prefix, ":", df.shape)
+        if merged_dfDES.empty:
+            merged_dfDES = df
+        else:
+            merged_dfDES = pd.merge(merged_dfDES, df, on=mergelist, how='outer')
+            print("Merged:", merged_dfDES.shape)
+    else:
+        df = pd.read_csv(os.path.join(followup_dir, file), header=0)
+        df = rename_columns(df)
+        mergelist_follwup = df.columns.intersection(merged_dfDES.columns)
+        df['interview_date'] = pd.to_datetime(df['interview_date'], format='%m/%d/%y').dt.strftime('%m/%d/%Y')
+        df = df.dropna(axis=1, how='all').copy()
+        print(file, ":", df.shape)
+        if merged_dfDES.empty:
+            merged_dfDES = df
+        else:
+            # merged_dfDES = pd.merge(merged_dfDES, df, on=mergelist_follwup, how='outer')
+            merged_dfDES = pd.concat([merged_dfDES, df], ignore_index=True, join='outer')
+            print("Merged:", merged_dfDES.shape)
+
+if not merged_dfDES.empty:
+    merged_dfDES['study'] = 'STACT'
+
+cols = ['src_subject_id', 'interview_date', 'interview_age', 'study', 'sex'] + [col for col in merged_dfDES if
+                                                                                col not in ['src_subject_id',
+                                                                                            'interview_date', 'sex',
+                                                                                            'interview_age', 'study']]
+merged_dfDES = merged_dfDES[cols]
+
+# stack three study
+# merged_temp = pd.merge(merged_dfMDD, merged_dfDAM,
+#                       on=['src_subject_id', 'interview_date', 'interview_age', 'study', 'sex'], how='outer')
+# merged_all = pd.merge(merged_temp, merged_df, on=['src_subject_id', 'interview_date', 'interview_age', 'study', 'sex'], how='outer')
+merged_all = pd.concat([merged_dfMDD, merged_dfDAM, merged_df, merged_dfDES], axis=0)
 
 
 for i in [merged_dfMDD, merged_dfDAM, merged_dfADA,merged_dfSTACT]:
