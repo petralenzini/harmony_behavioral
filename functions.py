@@ -1,3 +1,5 @@
+import numpy as np
+import pandas as pd
 
 #pulling out common functions
 def drop999cols(df,verbose=False):
@@ -46,7 +48,7 @@ def droprows(df,mergelist):
     print("after dropping identical duplicates of rows:",df.shape)
     return df,extra
 
-def MDDdupfix(df):
+def MDDdupfix(df,mergelist):
     extra=[]
     if 'version' in df.columns:
         extra=['version']
@@ -57,3 +59,15 @@ def MDDdupfix(df):
     df = df.drop_duplicates(subset=mergelist+extra, keep='last', inplace=False, ignore_index=True).copy()
     print("after MDD dupfix:",df.shape)
     return df
+
+def created_merged(prefix,df,merged_df,mergelist):
+    print(prefix, "final structure shape:", df.shape)
+    if merged_df.empty:
+        merged_df = df
+        print("*** merged_df initiated ******")
+    else:
+        merged_df = pd.merge(merged_df, df, on=mergelist, how='outer')
+        print("merged_df shape now:", merged_df.shape)
+        print("*********")
+    return merged_df
+

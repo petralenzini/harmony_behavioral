@@ -1,9 +1,14 @@
 import os
 import pandas as pd
 import numpy as np
+import os
+import sys
+
+#for this to work you need to right click on harmony and 'mark directory' as 'sources root':
 from functions import *
 
 rmstructure = ['fmriresults01', 'imagingcollection01', 'image03']
+mergelist = ['src_subject_id', 'subjectkey', 'interview_date', 'interview_age', 'sex']
 
 root_dir = "/Users/petralenzini/work/harmony/harmony_behavioral"
 #root_dir = "/Users/yuanyuanxiaowang/PycharmProjects/pythonProject/Harmony/harmony_behavioral/Harmony_non_imaging_data_sharing"
@@ -11,8 +16,10 @@ root_dir = "/Users/petralenzini/work/harmony/harmony_behavioral"
 ADA_dir = os.path.join(root_dir, "BANDA_Whitfield_Gabrieli")
 DAM_dir = os.path.join(root_dir, "ANXPE_Sheline")
 MDD_dir = os.path.join(root_dir, "MDD_Narr")
+STACT_baseline_dir = os.path.join(root_dir, "STACT_Williams/baseline")
+STACT_followup_dir = os.path.join(root_dir, "STACT_Williams/followups (3,6,9,12 months)")
+
 # ADA
-mergelist = ['src_subject_id', 'subjectkey', 'interview_date', 'interview_age', 'sex']
 droplist = ['collection_id', 'collection_title','dataset_id']
 
 #get list of files to process
@@ -27,44 +34,34 @@ if '.DS_Store' in ADA_files:
     ADA_files.remove('.DS_Store')
 
 #process
-merged_df = pd.DataFrame(columns=mergelist)
 AllADA=pd.DataFrame(columns=['element','variable','structure'])
+merged_dfADA = pd.DataFrame(columns=mergelist)
 for file in ADA_files:
     prefix = os.path.splitext(file)[0]
+    print("processing ",prefix)
     df = pd.read_csv(os.path.join(ADA_dir, file), delimiter='\t', header=0)
     df = df.drop(columns=droplist).copy()
-    print(file)
+    df = drop999cols(df, verbose=True)
     #some have the structure id housekeeping variable:
     try:
         df = df.drop(columns=[prefix +'_id']).copy()
     except:
         print(prefix + "_id NOT FOUND")
-    try:
-        df = df.iloc[1:]
-        # find columns that are all 999 or nan or combo of the two and remove
-        df=drop999cols(df,verbose=True)
-        #rename the variables and store the map
-        map, df, AllADA = partialcrosswalkmap(mergelist, df, prefix, AllADA)
-        #clean up empty rows
-        df=droprows(df,mergelist)
-        print(prefix, "final :", df.shape)
-        if merged_df.empty:
-            merged_df = df
-            print("*********")
-        else:
-            merged_df = pd.merge(merged_df, df, on=mergelist, how='outer')
-            print("Merged:", merged_df.shape)
-            print("*********")
-    except:
-        pass
-if not merged_df.empty:
-    merged_df['study'] = 'ADA'
-
+    df = df.iloc[1:]
+    #rename the variables and store the map
+    map, df, AllADA = partialcrosswalkmap(mergelist, df, prefix, AllADA)
+    #clean up empty rows
+    df,extra=droprows(df,mergelist)
+    #get the merged dataset
+    merged_dfADA=created_merged(prefix,df,merged_dfADA,mergelist)
+if not merged_dfADA.empty:
+    merged_dfADA['study'] = 'ADA'
+    AllADA['study']='ADA'
 #reorder
-cols = ['src_subject_id', 'interview_date', 'interview_age', 'study', 'sex'] + [col for col in merged_df if col not in ['src_subject_id', 'interview_date', 'sex',  'interview_age', 'study']]
-merged_df = merged_df[cols]
+cols = mergelist +['study'] + [col for col in merged_dfADA if col not in mergelist + ['study']]
+merged_dfADA = merged_dfADA[cols].reset_index()
 
-#############
+###############################
 # DAM
 DAM_files = os.listdir(DAM_dir)
 DAM_files = [file for file in DAM_files if "2019.02.27_FullDataSet_RedCap_824132.csv" not in file
@@ -75,34 +72,25 @@ DAM_files = [file for file in DAM_files if "2019.02.27_FullDataSet_RedCap_824132
 if '.DS_Store' in DAM_files:
     DAM_files.remove('.DS_Store')
 
+#process
 AllVDAM=pd.DataFrame(columns=['element','variable','structure'])
-mergelist = ['src_subject_id', 'subjectkey', 'interview_date', 'interview_age', 'sex']
-droplist = ['collection_id', 'collection_title']
 merged_dfDAM = pd.DataFrame(columns=['src_subject_id', 'subjectkey'])
 for file in DAM_files:
     prefix = os.path.splitext(file)[0]
+    print("processing ",prefix)
     df = pd.read_csv(os.path.join(DAM_dir, file), header=1, dtype=str)
     df = drop999cols(df, verbose=True)
-    try:
-        map, df, AllVDAM = partialcrosswalkmap(mergelist, df, prefix, AllVDAM)
-        df = droprows(df, mergelist)
-        print(prefix, " final :", df.shape)
-        if merged_dfDAM.empty:
-            merged_dfDAM = df
-            print("#########")
-        else:
-            merged_dfDAM = pd.merge(merged_dfDAM, df, on=mergelist, how='outer')
-            print("Merged:", merged_dfDAM.shape)
-            print("#########")
-    except:
-        pass
+    map, df, AllVDAM = partialcrosswalkmap(mergelist, df, prefix, AllVDAM)
+    df,extra = droprows(df, mergelist)
+    merged_dfDAM = created_merged(prefix, df, merged_dfDAM,mergelist)
 
 if not merged_dfDAM.empty:
     merged_dfDAM['study'] = 'DAM'
+    AllVDAM['study']='DAM'
 
 #reorder cols
-cols = ['src_subject_id', 'interview_date', 'interview_age', 'study', 'sex'] + [col for col in merged_dfDAM if col not in ['src_subject_id','interview_date', 'sex','interview_age', 'study']]
-merged_dfDAM = merged_dfDAM[cols]
+cols = mergelist +['study'] + [col for col in merged_dfDAM if col not in mergelist + ['study']]
+merged_dfDAM = merged_dfDAM[cols].reset_index()
 
 #################
 # MDD
@@ -115,10 +103,7 @@ MDD_files = [file for file in MDD_files if "definitions" not in file
 if '.DS_Store' in MDD_files:
     MDD_files.remove('.DS_Store')
 
-
 AllVMDD=pd.DataFrame(columns=['element','variable','structure'])
-mergelist = ['src_subject_id', 'subjectkey', 'interview_date', 'interview_age', 'sex']
-droplist = ['collection_id', 'collection_title']
 merged_dfMDD = pd.DataFrame(columns=['src_subject_key', 'subjectkey'])
 
 for file in MDD_files:
@@ -132,47 +117,68 @@ for file in MDD_files:
     if 'gender' in df.columns:
         df['sex'] = df['gender']
         df = df.drop(columns='gender')
+    df=MDDdupfix(df,mergelist)
     df = drop999cols(df, verbose=True)
     map, df, AllVMDD = partialcrosswalkmap(mergelist, df, prefix, AllVMDD)
-    #fix the cases where interview dates are same but ages change.
-    df=MDDdupfix(df)
-    #drop empties and duplicates
     df,extra=droprows(df,mergelist)
-    #track ids that are different betweeen subjcts
-    set1 = set(df['subjectkey'])
-    set2 = set(merged_dfMDD['subjectkey'])
-    print('number of different subjectkey :', len(set1 ^ set2))
-    print("if still duplicated, check:")
-    duplicate_rows_df = df[df[mergelist + extra].duplicated(keep=False)]
-    print('duplicate', prefix, ":", duplicate_rows_df.shape)#,duplicate_rows_df)
-    print(prefix, "final :", df.shape)
-    if merged_dfMDD.empty:
-        merged_dfMDD = df
-        print("Merged:", merged_dfMDD.shape)
-        print("************")
-    else:
-        merged_dfMDD = pd.merge(merged_dfMDD, df, on=mergelist, how='outer')
-        print("Merged:", merged_dfMDD.shape)
-        print("************")
-
+    ##track ids that are different betweeen subjcts
+    #set1 = set(df['subjectkey'])
+    #set2 = set(merged_dfMDD['subjectkey'])
+    #print('number of different subjectkey :', len(set1 ^ set2))
+    #print("if still duplicated, check:")
+    #duplicate_rows_df = df[df[mergelist + extra].duplicated(keep=False)]
+    #print('duplicate', prefix, ":", duplicate_rows_df.shape)#,duplicate_rows_df)
+    ## get the merged dataset
+    merged_dfMDD = created_merged(prefix, df, merged_dfMDD,mergelist)
 if not merged_dfMDD.empty:
     merged_dfMDD['study'] = 'MDD'
+    AllVMDD['study']='MDD'
 
-# merged_dfMDD['sex'] = merged_dfMDD['gender']
-# merged_dfMDD = merged_dfMDD.drop(columns='gender')
-cols = ['src_subject_id', 'interview_date', 'interview_age', 'study', 'sex'] + [col for col in merged_dfMDD if col not in ['src_subject_id', 'interview_date', 'sex', 'interview_age', 'study']]
-merged_dfMDD = merged_dfMDD[cols]
+cols = mergelist+['study'] + [col for col in merged_dfMDD if col not in mergelist + ['study']]
+merged_dfMDD = merged_dfMDD[cols].reset_index()
 
-# stack three study
-# merged_temp = pd.merge(merged_dfMDD, merged_dfDAM,
-#                       on=['src_subject_id', 'interview_date', 'interview_age', 'study', 'sex'], how='outer')
-# merged_all = pd.merge(merged_temp, merged_df, on=['src_subject_id', 'interview_date', 'interview_age', 'study', 'sex'], how='outer')
-merged_all = pd.concat([merged_dfMDD, merged_dfDAM, merged_df], axis=0)
+################################
+# #####STACT ##
+baseline_files = os.listdir(STACT_baseline_dir)
+followup_files = os.listdir(STACT_followup_dir)
+if '.DS_Store' in baseline_files:
+    baseline_files.remove('.DS_Store')
 
+merged_dfSTACT = pd.DataFrame(columns=mergelist).reset_index()
+AllVSTACT=pd.DataFrame(columns=['element','variable','structure'])
+
+for file in baseline_files:
+    prefix = os.path.splitext(file)[0]
+    print("processing ", prefix)
+    df = pd.read_csv(os.path.join(STACT_baseline_dir, file), header=0, encoding='ISO-8859-1')
+    df['interview_date'] = pd.to_datetime(df['interview_date'], format='%m/%d/%y').dt.strftime('%m/%d/%Y')
+    df = drop999cols(df, verbose=True)
+    map, df, AllVSTACT = partialcrosswalkmap(mergelist, df, prefix, AllVSTACT)
+    df, extra = droprows(df, mergelist)
+    merged_dfSTACT=created_merged(prefix,df,merged_dfSTACT,mergelist)
+if not merged_dfSTACT.empty:
+    merged_dfSTACT['study'] = 'STACT'
+    AllVSTACT['study']='STACT'
+
+##followup files are directly stackable.  No merging necessary
+#for file in followup_files:
+cols = mergelist +['study'] + [col for col in merged_dfSTACT if col not in mergelist + ['study']]
+merged_dfSTACT = merged_dfSTACT[cols].reset_index()
+
+
+for i in [merged_dfMDD, merged_dfDAM, merged_dfADA,merged_dfSTACT]:
+    print(i.shape)
+for i in [AllVMDD,AllVDAM,AllADA,AllVSTACT]:
+    print(i.shape)
+# stack four studies data
+merged_all = pd.concat([merged_dfMDD, merged_dfDAM, merged_dfADA], axis=0)
+merged_all = pd.concat([merged_all,merged_dfSTACT],axis=0)
 merged_all.to_csv(os.path.join(root_dir, 'NDA_structures_table_combined.csv'))
 
-#######################################################
-#change name of output to prevent confusion over REDCap data dictionary
-col_all = list(set(list(merged_df.columns)).union(list(merged_dfDAM.columns), list(merged_dfMDD.columns)))
-varsall = pd.DataFrame(col_all)
-varsall.to_csv(os.path.join(root_dir, "NDA_structures_variables_combined.csv"), index=False, header=False)
+# variables
+allstructs=mergelist+['study']
+col_all = pd.concat([AllADA,AllVDAM,AllVMDD,AllVSTACT],axis=0)
+col_all.to_csv(os.path.join(root_dir, "NDA_structures_variables_combined.csv"), index=False)
+
+print("************************")
+print("ALL FINISHED")
