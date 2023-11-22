@@ -64,10 +64,30 @@ def created_merged(prefix,df,merged_df,mergelist):
     print(prefix, "final structure shape:", df.shape)
     if merged_df.empty:
         merged_df = df
-        print("*** merged_df initiated ******")
+        print("*** Merged df initiated ******")
     else:
         merged_df = pd.merge(merged_df, df, on=mergelist, how='outer')
-        print("merged_df shape now:", merged_df.shape)
+        print("Merged df shape now:", merged_df.shape)
         print("*********")
     return merged_df
 
+def rename_columns(df,AllVSTACT):
+    old_columns=list(df.columns)
+    new_columns = []
+    structure=[]
+    for col in df.columns:
+        if 'gad' in col:
+            structure.append(f'gad701')
+            new_columns.append(f'gad701_{col}')
+        elif 'phq' in col:
+            structure.append(f'phq01')
+            new_columns.append(f'phq01_{col}')
+        elif 'swls' in col:
+            structure.append(f'swls01')
+            new_columns.append(f'swls01_{col}')
+        else:
+            structure.append(f'swls01')
+            new_columns.append(col)
+    df.columns = new_columns
+    All=pd.DataFrame({'variable':new_columns,'element':old_columns,'structure':structure})
+    return df,pd.concat([AllVSTACT,All],axis=0)
