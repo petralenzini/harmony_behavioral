@@ -72,6 +72,7 @@ for file in ADA_files:
 if not merged_dfADA.empty:
     merged_dfADA['study'] = 'BANDA'
     AllADA['study']='BANDA'
+
 AllADA=AllADA.drop_duplicates()
 check=[a for a in AllADA.variable if a not in merged_dfADA.columns]
 AllADA=AllADA.loc[AllADA.variable.str.contains('respondent')==False]
@@ -79,8 +80,8 @@ AllADA=AllADA.loc[AllADA.variable.str.contains('respondent')==False]
 #reorder
 cols = mergelist +['study'] + [col for col in merged_dfADA if col not in mergelist + ['study'] and 'version' not in col and 'wcst' not in col and 'language' not in col and 'pin' not in col]
 merged_dfADA = merged_dfADA.reset_index().drop(columns='index')
-merged_dfADA[cols].to_csv("CheckBANDA_Sanity_Child.csv",index=False)
-merged_dfADA_parents.to_csv("CheckBANDA_Parents_Sanity.csv",index=False)
+merged_dfADA[cols].to_csv(os.path.join(root_dir,"CheckBANDA_Sanity_Child.csv"),index=False)
+merged_dfADA_parents.to_csv(os.path.join(root_dir,"CheckBANDA_Parents_Sanity.csv"),index=False)
 ###############################
 # DAM
 DAM_files = os.listdir(DAM_dir)
@@ -111,7 +112,8 @@ if not merged_dfDAM.empty:
 #reorder cols
 cols = mergelist +['study'] + [col for col in merged_dfDAM if col not in mergelist + ['study'] and 'version' not in col and 'wcst' not in col and 'language' not in col and 'pin' not in col]
 merged_dfDAM = merged_dfDAM.reset_index()
-merged_dfDAM[cols].to_csv("CheckDAM_Sanity.csv",index=False)
+merged_dfDAM=merged_dfDAM.drop(columns='index')
+merged_dfDAM[cols].to_csv(os.path.join(root_dir,"CheckDAM_Sanity.csv"),index=False)
 AllVDAM=AllVDAM.drop_duplicates()
 check=[a for a in AllVDAM.variable if a not in merged_dfDAM.columns]
 
@@ -165,7 +167,8 @@ check=[a for a in AllVMDD.variable if a not in merged_dfMDD.columns]
 
 cols = mergelist+['study'] + [col for col in merged_dfMDD if col not in mergelist + ['study'] and 'version' not in col and 'wcst' not in col and 'language' not in col and 'pin' not in col and 'index' not in col]
 merged_dfMDD = merged_dfMDD.reset_index()
-merged_dfMDD[cols].to_csv("CheckMDD_Sanity.csv",index=False)
+merged_dfMDD=merged_dfMDD.drop(columns='index')
+merged_dfMDD[cols].to_csv(os.path.join(root_dir,"CheckMDD_Sanity.csv"),index=False)
 
 ################################
 # #####STACT ##
@@ -228,36 +231,35 @@ AllVSTACT=AllVSTACT.loc[AllVSTACT.element.isin(mergelist)==False]
 
 merged_dfDESSTACT=pd.concat([merged_dfSTACT,merged_dfDES],axis=0)
 merged_dfDESSTACT = merged_dfDESSTACT.reset_index()
+merged_dfDESSTACT =merged_dfDESSTACT.drop(columns='index')
+
 if not merged_dfDESSTACT.empty:
     merged_dfDESSTACT['study'] = 'STACT'
     AllVSTACT['study']='STACT'
 
 check=[a for a in AllVSTACT.variable if a not in merged_dfDESSTACT.columns]
-check=[a for a in merged_dfDESSTACT.columns if a not in AllVSTACT.variable]
+check=[a for a in merged_dfDESSTACT.columns if a not in list(AllVSTACT.variable)]
+
+#drop index and rearrange
+cols = mergelist+['study'] + [col for col in merged_dfDESSTACT if col not in mergelist + ['study']]
+merged_dfDESSTACT=merged_dfDESSTACT[cols].copy()
+merged_dfDESSTACT.to_csv(os.path.join(root_dir, "CheckDES_Sanity.csv"),index=False)
 
 
-cols = mergelist+['study'] + [col for col in merged_dfDESSTACT if col not in mergelist + ['study','index']]
-merged_dfDESSTACT[cols].to_csv("CheckDES_Sanity.csv",index=False)
-
-
-
-for i in [merged_dfMDD, merged_dfDAM, merged_dfADA,merged_dfSTACT]:
+#check that variables in the 'All' precursors to a data dictionary are the same as the ones in the merged datasets, less the mergelist
+for i in [merged_dfMDD, merged_dfDAM, merged_dfADA,merged_dfDESSTACT]:
     print(i.shape)
 for i in [AllVMDD,AllVDAM,AllADA,AllVSTACT]:
     print(i.shape)
 
-# stack four study
+# stack four studies
 merged_all = pd.concat([merged_dfMDD, merged_dfDAM, merged_dfADA, merged_dfDESSTACT], axis=0)
-merged_all.to_csv(os.path.join(root_dir, 'NDA_structures_table_combined.csv'))
+merged_all.to_csv(os.path.join(root_dir, 'NDA_structures_table_combined.csv'),index=False)
 
-for study in [merged_dfMDD, merged_dfDAM, merged_dfADA, merged_dfDESSTACT]:
-    for col
-# variables
-##this leading to discrepancies
-#allstructs=mergelist+['study']
-#col_all = pd.concat([AllADA,AllVDAM,AllVMDD,AllVSTACT],axis=0)
-#col_all = col_all.drop_duplicates()
 
+# stack four lists of variables that are non-empty in each study
+col_all = pd.concat([AllADA,AllVDAM,AllVMDD,AllVSTACT],axis=0)
+col_all = col_all.drop_duplicates()
 
 col_all.to_csv(os.path.join(root_dir, "NDA_structures_variables_combined.csv"), index=False)
 
