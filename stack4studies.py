@@ -234,8 +234,8 @@ merged_dfDESSTACT = merged_dfDESSTACT.reset_index()
 merged_dfDESSTACT =merged_dfDESSTACT.drop(columns='index')
 
 if not merged_dfDESSTACT.empty:
-    merged_dfDESSTACT['study'] = 'STACT'
-    AllVSTACT['study']='STACT'
+    merged_dfDESSTACT['study'] = 'DES'
+    AllVSTACT['study']='DES'
 
 check=[a for a in AllVSTACT.variable if a not in merged_dfDESSTACT.columns]
 check=[a for a in merged_dfDESSTACT.columns if a not in list(AllVSTACT.variable)]
