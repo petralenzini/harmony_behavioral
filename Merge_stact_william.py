@@ -2,7 +2,7 @@ import os
 import pandas as pd
 
 # root_dir = "/Users/petralenzini/work/harmony/harmony_behavioral"
-root_dir = "/Users/yuanyuanxiaowang/PycharmProjects/pythonProject/Harmony/harmony_behavioral/Harmony_non_imaging_data_sharing/STACT_Williams"
+root_dir = "/Harmony_non_imaging_data_sharing/STACT_Williams"
 
 baseline_dir = os.path.join(root_dir, "baseline")
 followup_dir = os.path.join(root_dir, "followups (3,6,9,12 months)")
@@ -44,14 +44,6 @@ for file in baseline_files:
         else:
             merged_df = pd.merge(merged_df, df, on=mergelist, how='outer')
             print("Merged:", merged_df.shape)
-if not merged_df.empty:
-    merged_df['study'] = 'STACT'
-
-cols = ['src_subject_id', 'interview_date', 'interview_age', 'study', 'sex'] + [col for col in merged_df if
-                                                                                col not in ['src_subject_id',
-                                                                                            'interview_date', 'sex',
-                                                                                            'interview_age', 'study']]
-merged_df = merged_df[cols]
 
 
 def rename_columns(df):
@@ -100,5 +92,12 @@ for file in followup_files:
             print("Merged:", merged_df.shape)
 
 
+if not merged_df.empty:
+    merged_df['study'] = 'STACT'
 
+cols = ['src_subject_id', 'interview_date', 'interview_age', 'study', 'sex'] + [col for col in merged_df if
+                                                                                col not in ['src_subject_id',
+                                                                                            'interview_date', 'sex',
+                                                                                            'interview_age', 'study']]
+merged_df = merged_df[cols]
 
