@@ -65,8 +65,11 @@ for file in ADA_files:
         if not parents.empty:
             if prefix=="demographics02":
                 exceptcols=[i for i in mergelist if i not in ['interview_date','interview_age']]
+                parents = drop999cols(parents, verbose=True)
                 parents = parents.drop_duplicates(subset=exceptcols, keep='last', inplace=False, ignore_index=True).copy()
         df=df.loc[df[respondentvar].str.upper()=='CHILD'].drop(columns=respondentvar)
+        if not df.empty:
+            df = drop999cols(df, verbose=True)
     merged_dfADA=created_merged(prefix,df,merged_dfADA,mergelist)
     merged_dfADA_parents=created_merged(prefix,parents,merged_dfADA_parents,mergelist)
 if not merged_dfADA.empty:
@@ -78,8 +81,13 @@ check=[a for a in AllADA.variable if a not in merged_dfADA.columns]
 AllADA=AllADA.loc[AllADA.variable.str.contains('respondent')==False]
 
 #reorder
-cols = mergelist +['study'] + [col for col in merged_dfADA if col not in mergelist + ['study'] and 'version' not in col and 'wcst' not in col and 'language' not in col and 'pin' not in col]
 merged_dfADA = merged_dfADA.reset_index().drop(columns='index')
+merged_dfADA_parents = drop999cols(merged_dfADA_parents, verbose=True)
+merged_dfADA = drop999cols(merged_dfADA, verbose=True)
+
+cols = mergelist +['study'] + [col for col in merged_dfADA if col not in mergelist + ['study'] and 'version' not in col and 'wcst' not in col and 'language' not in col and 'pin' not in col]
+colsparents = mergelist +['study'] + [col for col in merged_dfADA_parents if col not in mergelist + ['study'] and 'version' not in col and 'wcst' not in col and 'language' not in col and 'pin' not in col]
+
 merged_dfADA[cols].to_csv(os.path.join(root_dir,"CheckBANDA_Sanity_Child.csv"),index=False)
 merged_dfADA_parents.to_csv(os.path.join(root_dir,"CheckBANDA_Parents_Sanity.csv"),index=False)
 ###############################
