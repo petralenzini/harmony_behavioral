@@ -2,13 +2,12 @@ import os
 import pandas as pd
 
 
-root_dir = '/Users/yuanyuanxiaowang/PycharmProjects/pythonProject/Harmony/harmony_behavioral' \
-           '/Harmony_non_imaging_data_sharing'
-banda_parent = pd.read_csv(os.path.join(root_dir, 'CheckBANDA_Parents_Sanity.csv'))
-banda_children = pd.read_csv(os.path.join(root_dir, 'CheckBANDA_Sanity_Child.csv'))
-dam = pd.read_csv(os.path.join(root_dir, 'CheckDAM_Sanity.csv'))
-des = pd.read_csv(os.path.join(root_dir, 'CheckDES_Sanity.csv'))
-mdd = pd.read_csv(os.path.join(root_dir, 'CheckMDD_Sanity.csv'))
+root_dir = '/Harmony_non_imaging_data_sharing'
+banda_parent = pd.read_csv(os.path.join(root_dir, 'Harmony_non_imaging_data_sharing/CheckBANDA_Parents_Sanity.csv'))
+banda_children = pd.read_csv(os.path.join(root_dir, 'Harmony_non_imaging_data_sharing/CheckBANDA_Sanity_Child.csv'))
+dam = pd.read_csv(os.path.join(root_dir, 'Harmony_non_imaging_data_sharing/CheckDAM_Sanity.csv'))
+des = pd.read_csv(os.path.join(root_dir, 'Harmony_non_imaging_data_sharing/CheckDES_Sanity.csv'))
+mdd = pd.read_csv(os.path.join(root_dir, 'Harmony_non_imaging_data_sharing/CheckMDD_Sanity.csv'))
 
 
 # check number of subjects, gender
@@ -41,7 +40,7 @@ print(summary_df)
 df = des[des['sex'] == 'O']
 
 # check timepoint
-df = pd.read_csv(os.path.join(root_dir, 'NDA_structures_table_combined.csv'))
+df = pd.read_csv(os.path.join(root_dir, 'Harmony_non_imaging_data_sharing/NDA_structures_table_combined.csv'))
 num_subject_parent = df['subjectkey'].nunique()
 num_subject_parent = df['src_subject_id'].nunique()
 print(num_subject_parent)
@@ -72,13 +71,16 @@ plt.show()
 # check cols
 # Checking for columns that are completely missing or have a mixture of missing codes
 file_paths = {
-    "CheckBANDA_Parents_Sanity": os.path.join(root_dir, 'CheckBANDA_Parents_Sanity.csv'),
-    "CheckBANDA_Sanity_Child": os.path.join(root_dir, 'CheckBANDA_Sanity_Child.csv'),
-    "CheckDAM_Sanity": os.path.join(root_dir, 'CheckDAM_Sanity.csv'),
-    "CheckDES_Sanity": os.path.join(root_dir, 'CheckDES_Sanity.csv'),
-    "CheckMDD_Sanity": os.path.join(root_dir, 'CheckMDD_Sanity.csv'),
-    "NDA_structures_table_combined": os.path.join(root_dir, 'NDA_structures_table_combined.csv'),
-    "NDA_structures_variables_combined": os.path.join(root_dir, 'NDA_structures_variables_combined.csv')
+    "CheckBANDA_Parents_Sanity": os.path.join(root_dir,
+                                              'Harmony_non_imaging_data_sharing/CheckBANDA_Parents_Sanity.csv'),
+    "CheckBANDA_Sanity_Child": os.path.join(root_dir, 'Harmony_non_imaging_data_sharing/CheckBANDA_Sanity_Child.csv'),
+    "CheckDAM_Sanity": os.path.join(root_dir, 'Harmony_non_imaging_data_sharing/CheckDAM_Sanity.csv'),
+    "CheckDES_Sanity": os.path.join(root_dir, 'Harmony_non_imaging_data_sharing/CheckDES_Sanity.csv'),
+    "CheckMDD_Sanity": os.path.join(root_dir, 'Harmony_non_imaging_data_sharing/CheckMDD_Sanity.csv'),
+    "NDA_structures_table_combined": os.path.join(root_dir,
+                                                  'Harmony_non_imaging_data_sharing/NDA_structures_table_combined.csv'),
+    "NDA_structures_variables_combined": os.path.join(root_dir,
+                                                      'Harmony_non_imaging_data_sharing/NDA_structures_variables_combined.csv')
 }
 
 # Load each file into a DataFrame
