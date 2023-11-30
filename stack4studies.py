@@ -276,11 +276,16 @@ col_all.to_csv(os.path.join(root_dir, "NDA_structures_variables_combined.csv"), 
 
 # merge big stack csv and inventory
 inventory = pd.read_csv(os.path.join(root_dir, 'Inventory_Datasets_2023-09-07.csv'))
-inventory = inventory[['subjectkey', 'src_subject_id', 'CASE/CONTROL', 'interview_age_yrs', 'race', 'phenotype']]
-
+inventory = inventory[['src_subject_id', 'CASE/CONTROL', 'interview_age_yrs', 'race']]
+inventory['src_subject_id'] = inventory['src_subject_id'].apply(
+    lambda x: 'sub-' + x if isinstance(x, str) and 'CONN' in x else x
+)
+inventory.to_csv('inventory2.csv', index=False)
+inventory = pd.read_csv('inventory2.csv')
 result = pd.merge(merged_all, inventory, on='src_subject_id', how='left')
+cols = mergelist + ['study'] + [col for col in result if col not in mergelist + ['study']]
+result = result[cols].copy()
 result.to_csv(os.path.join(root_dir, 'NDA_structures_table_combined.csv'), index=False)
 
 print("************************")
 print("ALL FINISHED")
-
