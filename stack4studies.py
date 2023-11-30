@@ -278,8 +278,9 @@ col_all.to_csv(os.path.join(root_dir, "NDA_structures_variables_combined.csv"), 
 inventory = pd.read_csv(os.path.join(root_dir, 'Inventory_Datasets_2023-09-07.csv'))
 inventory = inventory[['subjectkey', 'src_subject_id', 'CASE/CONTROL', 'interview_age_yrs', 'race', 'phenotype']]
 
-result = pd.merge(merged_all, inventory, on=['subjectkey', 'src_subject_id'], how='left')
+result = pd.merge(merged_all, inventory, on='src_subject_id', how='left')
 result.to_csv(os.path.join(root_dir, 'NDA_structures_table_combined.csv'), index=False)
 
 print("************************")
 print("ALL FINISHED")
+
