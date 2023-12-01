@@ -273,7 +273,7 @@ col_all = pd.concat([AllADA, AllVDAM, AllVMDD, AllVSTACT], axis=0)
 col_all = col_all.drop_duplicates()
 
 col_all.to_csv(os.path.join(root_dir, "NDA_structures_variables_combined.csv"), index=False)
-
+#merged_all.to_csv(os.path.join(root_dir, 'NDA_structures_table_combined.csv'), index=False)
 # merge big stack csv and inventory
 inventory = pd.read_csv(os.path.join(root_dir, 'Inventory_Datasets_2023-09-07.csv'))
 inventory = inventory[['src_subject_id', 'CASE/CONTROL', 'interview_age_yrs', 'race']]
@@ -283,6 +283,10 @@ inventory['src_subject_id'] = inventory['src_subject_id'].apply(
 inventory.to_csv('inventory2.csv', index=False)
 inventory = pd.read_csv('inventory2.csv')
 result = pd.merge(merged_all, inventory, on='src_subject_id', how='left')
+result['CASE/CONTROL'] = result.apply(
+    lambda row: 'CASE' if row['subjectkey'] in ['NDARAB921RG', 'NDAREH040NB2'] else row['CASE/CONTROL'],
+    axis=1
+)
 cols = mergelist + ['study'] + [col for col in result if col not in mergelist + ['study']]
 result = result[cols].copy()
 result.to_csv(os.path.join(root_dir, 'NDA_structures_table_combined.csv'), index=False)
