@@ -3,15 +3,15 @@ import pandas as pd
 import numpy as np
 import os
 import sys
+import shutil
 
 # for this to work you need to right click on harmony and 'mark directory' as 'sources root':
 from functions import *
 
-rmstructure = ['fmriresults01', 'imagingcollection01', 'image03']
 mergelist = ['src_subject_id', 'subjectkey', 'interview_date', 'interview_age', 'sex']
 
-# root_dir = "/Users/petralenzini/work/harmony/harmony_behavioral"
-root_dir = "/Users/yuanyuanxiaowang/PycharmProjects/pythonProject/Harmony/harmony_behavioral/Harmony_non_imaging_data_sharing"
+root_dir = "/Users/petralenzini/work/harmony/harmony_behavioral"
+#root_dir = "/Users/yuanyuanxiaowang/PycharmProjects/pythonProject/Harmony/harmony_behavioral/Harmony_non_imaging_data_sharing"
 
 ADA_dir = os.path.join(root_dir, "BANDA_Whitfield_Gabrieli")
 DAM_dir = os.path.join(root_dir, "ANXPE_Sheline")
@@ -187,28 +187,40 @@ merged_dfMDD[cols].to_csv(os.path.join(root_dir, "CheckMDD_Sanity.csv"), index=F
 # #####STACT ##
 baseline_files = os.listdir(STACT_baseline_dir)
 followup_files = os.listdir(STACT_followup_dir)
-if '.DS_Store' in baseline_files:
-    baseline_files.remove('.DS_Store')
-if '.DS_Store' in followup_files:
-    followup_files.remove('.DS_Store')
+#try renaming ndar01.csv to proper ndar_subject01.csv if it hasn't already been renamed in a previous iteration
+shutil.copy(os.path.join(STACT_baseline_dir, "ndar01.csv"), os.path.join(STACT_baseline_dir, "ndar_subject01.csv"))
+
+for d in ['.DS_Store','cqol.csv','sofas.csv','rrs.csv','cope.csv']:
+    try:
+        baseline_files.remove(d)
+    except:
+        pass
+    try:
+        followup_files.remove(d)
+    except:
+        pass
 
 merged_dfSTACT = pd.DataFrame(columns=mergelist).reset_index()
 AllVSTACT = pd.DataFrame(columns=['element', 'variable', 'structure'])
 
+#first the baseline files
 for file in baseline_files:
     prefix = os.path.splitext(file)[0]
-    if 'webneuro01' in prefix:
-        prefix = 'webneuro01'
-    print("processing ", prefix)
-    df = pd.read_csv(os.path.join(STACT_baseline_dir, file), header=0, encoding='ISO-8859-1')
-    df['interview_date'] = pd.to_datetime(df['interview_date'], format='%m/%d/%y').dt.strftime('%m/%d/%Y')
-    df = drop999cols(df, verbose=True)
-    map, df, AllVSTACT = partialcrosswalkmap(mergelist, df, prefix, AllVSTACT)
-    df, extra = droprows(df, mergelist)
-    if merged_dfSTACT.empty:
-        merged_dfSTACT = df
+    if 'ndar01' in prefix:
+        pass
     else:
-        merged_dfSTACT = created_merged(prefix, df, merged_dfSTACT, mergelist)
+        if 'webneuro01' in prefix:
+            prefix = 'webneuro01'
+        print("processing ", prefix)
+        df = pd.read_csv(os.path.join(STACT_baseline_dir, file), header=0, encoding='ISO-8859-1')
+        df['interview_date'] = pd.to_datetime(df['interview_date'], format='%m/%d/%y').dt.strftime('%m/%d/%Y')
+        df = drop999cols(df, verbose=True)
+        map, df, AllVSTACT = partialcrosswalkmap(mergelist, df, prefix, AllVSTACT)
+        df, extra = droprows(df, mergelist)
+        if merged_dfSTACT.empty:
+            merged_dfSTACT = df
+        else:
+            merged_dfSTACT = created_merged(prefix, df, merged_dfSTACT, mergelist)
 merged_dfSTACT = merged_dfSTACT.loc[merged_dfSTACT.interview_date.isnull() == False]
 
 merged_dfDES = pd.DataFrame(columns=mergelist).reset_index()
