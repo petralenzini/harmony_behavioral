@@ -73,26 +73,55 @@ for file in ADA_files:
             df = drop999cols(df, verbose=True)
     merged_dfADA = created_merged(prefix, df, merged_dfADA, mergelist)
     merged_dfADA_parents = created_merged(prefix, parents, merged_dfADA_parents, mergelist)
+
 if not merged_dfADA.empty:
     merged_dfADA['study'] = 'BANDA'
-    AllADA['study'] = 'BANDA'
 
-AllADA = AllADA.drop_duplicates()
-check = [a for a in AllADA.variable if a not in merged_dfADA.columns]
-AllADA = AllADA.loc[AllADA.variable.str.contains('respondent') == False]
+if not merged_dfADA_parents.empty:
+    merged_dfADA_parents['study'] = 'BANDA PARENTS'
 
-# reorder
-merged_dfADA = merged_dfADA.reset_index().drop(columns='index')
 merged_dfADA_parents = drop999cols(merged_dfADA_parents, verbose=True)
 merged_dfADA = drop999cols(merged_dfADA, verbose=True)
 
+#all the parent structures had respondent variables which are in AllADA but not the stacked structure.  remove them and later create a single one
+AllADA = AllADA.loc[AllADA.variable.str.contains('respondent') == False]
+
+#here were just checking that the number of variables in AllADA is the same as the set of variables in the combined list of columns in parents and children
+AllADA = AllADA.drop_duplicates()
+check = [a for a in AllADA.variable if a not in merged_dfADA.columns]  #only in parents
+check2 = [a for a in check if a not in merged_dfADA_parents.columns]
+pcheck = [p for p in AllADA.variable if p not in merged_dfADA_parents.columns] #only in children
+pcheck2 = [p for p in pcheck if p not in merged_dfADA.columns]
+check3=list(merged_dfADA.columns)+list(merged_dfADA_parents.columns)
+len(set(check3))
+#now set study for these variables
+AllADA_C=AllADA.loc[AllADA.variable.isin(list(merged_dfADA.columns))].copy()
+AllADA_C['study'] = 'BANDA'
+AllADA_P=AllADA.loc[AllADA.variable.isin(list(merged_dfADA_parents.columns))].copy()
+AllADA_P['study'] = 'BANDA PARENTS'
+
+merged_dfADA = merged_dfADA.reset_index().drop(columns='index')
+merged_dfADA_parents = merged_dfADA_parents.reset_index().drop(columns='index')
+
+#add back in a parent response variable for stacking.
+merged_dfADA_parents['respondent']='parent'
+#note that respondent wont be defined in the data dictionary as of this moment
+
+
+# reorder
 cols = mergelist + ['study'] + [col for col in merged_dfADA if col not in mergelist + [
     'study'] and 'version' not in col and 'wcst' not in col and 'language' not in col and 'pin' not in col]
-colsparents = mergelist + ['study'] + [col for col in merged_dfADA_parents if col not in mergelist + [
+colsparents = ['respondent']+ mergelist + ['study'] + [col for col in merged_dfADA_parents if col not in mergelist + [
     'study'] and 'version' not in col and 'wcst' not in col and 'language' not in col and 'pin' not in col]
 
 merged_dfADA[cols].to_csv(os.path.join(root_dir, "CheckBANDA_Sanity_Child.csv"), index=False)
 merged_dfADA_parents.to_csv(os.path.join(root_dir, "CheckBANDA_Parents_Sanity.csv"), index=False)
+
+#treat parents as a separate study, 'BANDA Parents'
+    #merged_dfADA_parents
+    #merged_dfADA
+    #AllADA_P
+    #AllADA_C
 ###############################
 # DAM
 DAM_files = os.listdir(DAM_dir)
@@ -270,18 +299,24 @@ cols = mergelist + ['study'] + [col for col in merged_dfDESSTACT if col not in m
 merged_dfDESSTACT = merged_dfDESSTACT[cols].copy()
 merged_dfDESSTACT.to_csv(os.path.join(root_dir, "CheckDES_Sanity.csv"), index=False)
 
+# merged_dfADA_parents
+# merged_dfADA
+# AllADA_P
+# AllADA_C
+
 # check that variables in the 'All' precursors to a data dictionary are the same as the ones in the merged datasets, less the mergelist
-for i in [merged_dfMDD, merged_dfDAM, merged_dfADA, merged_dfDESSTACT]:
+for i in [merged_dfMDD, merged_dfDAM, merged_dfADA,merged_dfADA_parents, merged_dfDESSTACT]:
     print(i.shape)
-for i in [AllVMDD, AllVDAM, AllADA, AllVSTACT]:
+for i in [AllVMDD, AllVDAM, AllADA_C, AllADA_P, AllVSTACT]:
     print(i.shape)
 
-# stack four studies
-merged_all = pd.concat([merged_dfMDD, merged_dfDAM, merged_dfADA, merged_dfDESSTACT], axis=0)
+# stack 'five' studies
+merged_all = pd.concat([merged_dfMDD, merged_dfDAM, merged_dfADA, merged_dfADA_parents, merged_dfDESSTACT], axis=0)
 # merged_all.to_csv(os.path.join(root_dir, 'NDA_structures_table_combined.csv'), index=False)
-
-# stack four lists of variables that are non-empty in each study
-col_all = pd.concat([AllADA, AllVDAM, AllVMDD, AllVSTACT], axis=0)
+#sanity:
+print(merged_all[['subjectkey','study']].drop_duplicates().study.value_counts())
+# stack  lists of variables that are non-empty in each study
+col_all = pd.concat([AllADA_C, AllADA_P, AllVDAM, AllVMDD, AllVSTACT], axis=0)
 col_all = col_all.drop_duplicates()
 
 col_all.to_csv(os.path.join(root_dir, "NDA_structures_variables_combined.csv"), index=False)
@@ -292,8 +327,8 @@ inventory = inventory[['src_subject_id', 'CASE/CONTROL', 'interview_age_yrs', 'r
 inventory['src_subject_id'] = inventory['src_subject_id'].apply(
     lambda x: 'sub-' + x if isinstance(x, str) and 'CONN' in x else x
 )
-inventory.to_csv('inventory2.csv', index=False)
-inventory = pd.read_csv('inventory2.csv')
+#inventory.to_csv('inventory2.csv', index=False)
+#inventory = pd.read_csv('inventory2.csv')
 result = pd.merge(merged_all, inventory, on='src_subject_id', how='left')
 result['CASE/CONTROL'] = result.apply(
     lambda row: 'CASE' if row['subjectkey'] in ['NDARAB921RG', 'NDAREH040NB2'] else row['CASE/CONTROL'],
