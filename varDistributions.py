@@ -123,6 +123,19 @@ for struct in structs2check:
             plt.savefig(os.path.join(root_dir, 'plots', i))  # , *, dpi='figure', format=None, metadata=None,
             plt.show()
 
+#now compare variable lists of variables for structures with more than 1 representative study:
+for i in structs2check:
+    strucvars=vars.loc[vars.structure==i]
+    studystrucvars = strucvars[['variable']].drop_duplicates()
+    print("*****************")
+    print("Structure:", i)
+    for s in list(strucvars.study.unique()):
+        print("Study:",s)
+        studystrucvars=studystrucvars.merge(strucvars.loc[strucvars.study==s][['variable']],on='variable',how='outer',indicator=s)
+        for c in studystrucvars.columns[1:]:
+            studystrucvars[c] = studystrucvars[c].str.replace('left_only', 'NO').str.replace('both', 'YES')
+        studystrucvars.to_csv(i+"_elements_by_site.csv",index=False)
+        #print(studystrucvars.variable)
 
 
 

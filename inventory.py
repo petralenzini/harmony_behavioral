@@ -3,10 +3,10 @@ import os
 import matplotlib.pyplot as plt
 from datetime import date
 
-rootdir="/Users/petralenzini/work/harmony/"
-MDDfiles=os.listdir(rootdir+"phenotypes_original/MDD_Narr")
-BANDAfiles=os.listdir(rootdir+"phenotypes_original/BANDA_Whitfield_Gabrieli")
-ANXPEfiles=os.listdir(rootdir+"phenotypes_original/ANXPE_Sheline")
+rootdir="/Users/petralenzini/work/harmony/harmony_behavioral/"
+MDDfiles=os.listdir(rootdir+"MDD_Narr")
+BANDAfiles=os.listdir(rootdir+"BANDA_Whitfield_Gabrieli")
+ANXPEfiles=os.listdir(rootdir+"ANXPE_Sheline")
 
 #MDD
 MDDinventory=pd.read_csv(rootdir+"phenotypes_original/MDD_Narr/ndar_subject01.csv", sep=',', header=1)
@@ -14,13 +14,13 @@ MDDinventory=MDDinventory[['subjectkey','src_subject_id','interview_age','sex','
 #MDD has multiple timepoints per person
 
 for i in MDDfiles:
-    temp=pd.read_csv(rootdir+"phenotypes_original/MDD_Narr/"+i, header=1)
+    temp=pd.read_csv(rootdir+"MDD_Narr/"+i, header=1)
     temp[i]='YES'
     if 'definitions' in i:
         pass
     elif 'hrsd01.csv' in i:
         #formatting issue, dlm is ; not ,
-        temp=pd.read_csv(rootdir+"phenotypes_original/MDD_Narr/"+i, sep=';', header=1)
+        temp=pd.read_csv(rootdir+"MDD_Narr/"+i, sep=';', header=1)
         temp = temp.drop_duplicates(subset=['subjectkey'])
     else:
         try:
@@ -34,12 +34,12 @@ for i in MDDfiles:
 MDDinventory['study']='MDD'
 
 #BANDA
-BANDAinventory=pd.read_csv(rootdir+"phenotypes_original/BANDA_Whitfield_Gabrieli/ndar_subject01.txt", sep='\t',header=0)
+BANDAinventory=pd.read_csv(rootdir+"/BANDA_Whitfield_Gabrieli/ndar_subject01.txt", sep='\t',header=0,encoding='ISO-8859-1')
 BANDAinventory=BANDAinventory.iloc[1:]
 BANDAinventory=BANDAinventory[['subjectkey','src_subject_id','interview_age','sex','race','phenotype']].copy()
 for i in BANDAfiles:
-    if ('pdf' not in i) and ('dataset_collection' not in i) and ('package_info' not in i) and ('md5_values' not in i):
-        temp=pd.read_csv(rootdir+"phenotypes_original/BANDA_Whitfield_Gabrieli/"+i, sep='\t',header=0)
+    if ('pdf' not in i) and ('dataset_collection' not in i) and ('package_info' not in i) and ('md5_values' not in i) and ('.DS_Store' not in i):
+        temp=pd.read_csv(rootdir+"/BANDA_Whitfield_Gabrieli/"+i, sep='\t',header=0,encoding='ISO-8859-1')
         # Drop the second header row
         temp = temp.iloc[1:]
         temp[i]='YES'
@@ -65,13 +65,13 @@ BANDAinventory.columns=['subjectkey', 'src_subject_id', 'interview_age', 'sex', 
        'demographics02.csv', 'rmbi01.csv', 'cssrs01.csv', 'pmat01.csv',
        'ksads_diagnoses01.csv', 'pcps01.csv', 'tanner_sms01.csv', 'study']
 #ANXPE
-ANXPEinventory=pd.read_csv(rootdir+"phenotypes_original/ANXPE_Sheline/ndar_subject01.csv", sep=',',header=1)
+ANXPEinventory=pd.read_csv(rootdir+"ANXPE_Sheline/ndar_subject01.csv", sep=',',header=1)
 ANXPEinventory=ANXPEinventory[['subjectkey','src_subject_id','interview_age','sex','race','phenotype']].copy()
 
 for i in ANXPEfiles:
     if ("2019.02.27_FullDataSet_RedCap_824132.csv" not in i) and ('xlsx' not in i) and ('docx' not in i) and ('REDCap_ANXPEConnectomicsStudyDataCol_DataDictionary_2023-08-22' not in i):
         if "u01_neuropsych_summary_v1" in i:
-            temp = pd.read_csv(rootdir + "phenotypes_original/ANXPE_Sheline/u01_neuropsych_summary_v1.csv")
+            temp = pd.read_csv(rootdir + "ANXPE_Sheline/u01_neuropsych_summary_v1.csv")
         else:
             temp = pd.read_csv(rootdir + "phenotypes_original/ANXPE_Sheline/" + i, sep=',', header=1)
         # Drop the second header row

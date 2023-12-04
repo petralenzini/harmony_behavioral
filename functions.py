@@ -22,6 +22,7 @@ def drop999cols(df,verbose=False):
     if verbose:
         print("dropped columns Null", dropcols2)
     print("after nulldrop", df.shape)
+    df=df.dropna(axis=1,how='all')
     return df
 def partialcrosswalkmap(mergelist,df,prefix,AllVADA):
     before = [i for i in list(df.columns) if i not in mergelist]
