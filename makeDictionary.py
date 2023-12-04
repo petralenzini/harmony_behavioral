@@ -187,25 +187,25 @@ def temp():
     # import inventory ids
     # import Lexi's dataset
 
-Cognitive=['dccs01.txt','pcps01.txt','flanker01.txt','lswmt01.txt','orrt01.txt','pwmt01.txt','pmat01.txt','psm01.csv','tpvt01.csv']
-cog2=[j.strip(".csv") for j in [i.strip(".txt") for i in Cognitive]]
-MoodAndAnxiety=['hrsd01.csv','dass01.csv','qids01.csv','shaps01.txt','strain01.txt']
-mood2=[j.strip(".csv") for j in [i.strip(".txt") for i in MoodAndAnxiety]]
-Temperment=['bisbas01.txt','bisbas01.txt','nffi01.txt']
-temp2=[j.strip(".csv") for j in [i.strip(".txt") for i in Temperment]]
-Dems=['demographics02.txt','edinburgh_hand01.csv','chaphand01.txt']
-dems2=[j.strip(".csv") for j in [i.strip(".txt") for i in Dems]]
-sortedlist=Cognitive+MoodAndAnxiety+Temperment+Dems
-sortedlist=sortedlist+['common']
-notlist=[i for i in list(RedDict['Form / Instrument'].unique()) if (i not in sortedlist)]
+    Cognitive=['dccs01.txt','pcps01.txt','flanker01.txt','lswmt01.txt','orrt01.txt','pwmt01.txt','pmat01.txt','psm01.csv','tpvt01.csv']
+    cog2=[j.strip(".csv") for j in [i.strip(".txt") for i in Cognitive]]
+    MoodAndAnxiety=['hrsd01.csv','dass01.csv','qids01.csv','shaps01.txt','strain01.txt']
+    mood2=[j.strip(".csv") for j in [i.strip(".txt") for i in MoodAndAnxiety]]
+    Temperment=['bisbas01.txt','bisbas01.txt','nffi01.txt']
+    temp2=[j.strip(".csv") for j in [i.strip(".txt") for i in Temperment]]
+    Dems=['demographics02.txt','edinburgh_hand01.csv','chaphand01.txt']
+    dems2=[j.strip(".csv") for j in [i.strip(".txt") for i in Dems]]
+    sortedlist=Cognitive+MoodAndAnxiety+Temperment+Dems
+    sortedlist=sortedlist+['common']
+    notlist=[i for i in list(RedDict['Form / Instrument'].unique()) if (i not in sortedlist)]
 
-RedDict['Form_old']=RedDict['Form / Instrument']
-RedDict.loc[RedDict['Form / Instrument'].str.replace('.txt','').str.replace(".csv","").isin(cog2),'Form / Instrument']='Cognitive'
-RedDict.loc[RedDict['Form / Instrument'].str.replace('.txt','').str.replace(".csv","").isin(mood2),'Form / Instrument']='Mood_and_Anxiety'
-RedDict.loc[RedDict['Form / Instrument'].str.replace('.txt','').str.replace(".csv","").isin(temp2),'Form / Instrument']='Temperment'
-RedDict.loc[RedDict['Form / Instrument'].str.replace('.txt','').str.replace(".csv","").isin(dems2),'Form / Instrument']='Sample_Characteristics'
-RedDict.loc[RedDict['Form / Instrument'].str.replace('.txt','').str.replace(".csv","").isin(notlist),'Form / Instrument']='Unassigned'
+    RedDict['Form_old']=RedDict['Form / Instrument']
+    RedDict.loc[RedDict['Form / Instrument'].str.replace('.txt','').str.replace(".csv","").isin(cog2),'Form / Instrument']='Cognitive'
+    RedDict.loc[RedDict['Form / Instrument'].str.replace('.txt','').str.replace(".csv","").isin(mood2),'Form / Instrument']='Mood_and_Anxiety'
+    RedDict.loc[RedDict['Form / Instrument'].str.replace('.txt','').str.replace(".csv","").isin(temp2),'Form / Instrument']='Temperment'
+    RedDict.loc[RedDict['Form / Instrument'].str.replace('.txt','').str.replace(".csv","").isin(dems2),'Form / Instrument']='Sample_Characteristics'
+    RedDict.loc[RedDict['Form / Instrument'].str.replace('.txt','').str.replace(".csv","").isin(notlist),'Form / Instrument']='Unassigned'
 
 
-reorder=['Variable / Field Name', 'Form / Instrument', 'Section Header','Field Type', 'Field Label', 'Choices, Calculations, OR Slider Labels']
-RedDict[reorder].to_csv(os.path.join(root_dir,"REDCap_DataDictionary.csv"),index=False)
+    reorder=['Variable / Field Name', 'Form / Instrument', 'Section Header','Field Type', 'Field Label', 'Choices, Calculations, OR Slider Labels']
+    RedDict[reorder].to_csv(os.path.join(root_dir,"REDCap_DataDictionary.csv"),index=False)
