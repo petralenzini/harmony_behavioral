@@ -40,6 +40,10 @@ def droprows(df,mergelist):
     extra = []
     if 'study' in df.columns:
         extra = extra+['study']
+    if 'cohort' in df.columns:
+        extra = extra+['cohort']
+    if 'visit' in df.columns:
+        extra = extra+['visit']
     if 'version' in df.columns:
         extra=extra+['version']
     na = [c for c in df.columns if c not in mergelist + extra]
