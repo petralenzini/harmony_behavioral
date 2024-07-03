@@ -6,7 +6,7 @@ import sys
 import shutil
 
 
-# TO DO look into  u01_neuropsych_summary_v1.csv to see why it's not pulled in
+# TO DO filter with curated subject lists (imaging and phenotypes)
 datestr=datetime.date.today().strftime("%b%d_%Y")
 freezenum=5
 
@@ -18,6 +18,7 @@ mergelist = ['src_subject_id', 'subjectkey', 'interview_date', 'interview_age', 
 root_invent = "/Users/petralenzini/work/harmony/harmony_behavioral"
 root_dir = "/Users/petralenzini/work/harmony/harmony_behavioral_"+str(datestr)
 #root_dir = "/Users/yuanyuanxiaowang/PycharmProjects/pythonProject/Harmony/harmony_behavioral/Harmony_non_imaging_data_sharing"
+DESsubs='DES_subjectsCuratedJuly2024.txt'
 
 ADA_dir = os.path.join(root_dir, "BANDA_Whitfield_Gabrieli")
 DAM_dir = os.path.join(root_dir, "DAM_ANXPE_Sheline")
@@ -431,6 +432,10 @@ result['CASE/CONTROL'] = result.apply(
 )
 cols = mergelist + ['study'] + [col for col in result if col not in mergelist + ['study']]
 result = result[cols].copy()
+
+#apply subject filters
+DESsublist=pd.read_csv(os.path.join(root_invent,DESsubs) #imaging is BL only
+
 result.to_csv(os.path.join(root_dir, 'NDA_structures_table_combined.csv'), index=False)
 result.to_csv(os.path.join(root_dir,'HarmonyData_Freeze'+str(freezenum)+'_'+ datestr +'_wSites.csv'), index=False)
 
